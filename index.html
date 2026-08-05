@@ -1,0 +1,1150 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>제주 방언 퀴즈 🍊</title>
+<style>
+  :root {
+    --orange: #ff8c42;
+    --orange-dark: #f4712e;
+    --ocean: #2a9d8f;
+    --ocean-dark: #21867a;
+    --navy: #264653;
+    --cream: #fff8f0;
+    --paper: #ffffff;
+    --ink: #2b2b2b;
+    --gray: #8a8a8a;
+    --line: #ececec;
+    --green: #43a047;
+    --red: #e53935;
+    --shadow: 0 10px 40px rgba(38,70,83,.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Apple SD Gothic Neo", "Malgun Gothic", "맑은 고딕", sans-serif;
+    background: linear-gradient(160deg, #ffe8cc 0%, #d7f0ec 100%);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    align-items: safe center;
+    justify-content: center;
+    padding: 24px 16px;
+    line-height: 1.6;
+  }
+  .app { width: 100%; max-width: 680px; }
+  .card {
+    background: var(--paper);
+    border-radius: 24px;
+    box-shadow: var(--shadow);
+    padding: 40px 36px;
+    animation: pop .35s ease;
+  }
+  @keyframes pop {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .hidden { display: none; }
+
+  /* ---------- 홈 버튼 ---------- */
+  .home-btn {
+    position: fixed;
+    top: 18px; left: 18px;
+    z-index: 1000;
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid var(--line);
+    box-shadow: var(--shadow);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    display: grid; place-items: center;
+    transition: transform .12s, border-color .2s;
+  }
+  .home-btn:hover { transform: translateY(-2px) scale(1.05); border-color: var(--orange); }
+  .home-btn:active { transform: translateY(0) scale(1); }
+  .home-btn.hidden { display: none; }
+
+  /* ---------- 확인 모달 ---------- */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 2000;
+    background: rgba(38,70,83,.45);
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    animation: fade .15s ease;
+  }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+  .modal-overlay.hidden { display: none; }
+  .modal {
+    background: #fff; border-radius: 20px; padding: 28px 24px;
+    max-width: 360px; width: 100%; text-align: center;
+    box-shadow: var(--shadow);
+  }
+  .modal .m-emoji { font-size: 40px; }
+  .modal p { font-size: 16px; color: var(--navy); font-weight: 700; line-height: 1.6; margin-top: 8px; }
+  .modal .modal-btns { display: flex; gap: 10px; margin-top: 22px; }
+  .modal .btn { margin-top: 0; flex: 1; }
+
+  /* ---------- 시작 화면 ---------- */
+  .hero { text-align: center; }
+  .hero .emoji { font-size: 60px; display: block; margin-bottom: 8px; }
+  .hero h1 { font-size: 30px; color: var(--navy); letter-spacing: -.5px; }
+  .hero .sub { color: var(--ocean-dark); font-weight: 700; margin-top: 8px; font-size: 17px; }
+  .hero p.desc { color: var(--gray); margin-top: 14px; font-size: 15px; }
+  .name-box { margin-top: 28px; text-align: left; }
+  .name-box label { font-weight: 700; font-size: 15px; color: var(--navy); }
+  input[type=text] {
+    width: 100%;
+    margin-top: 10px;
+    padding: 15px 18px;
+    font-size: 17px;
+    border: 2px solid var(--line);
+    border-radius: 14px;
+    outline: none;
+    transition: border .2s;
+    font-family: inherit;
+  }
+  input[type=text]:focus { border-color: var(--orange); }
+  .btn {
+    display: inline-block;
+    width: 100%;
+    margin-top: 22px;
+    padding: 16px;
+    font-size: 18px;
+    font-weight: 800;
+    color: #fff;
+    background: linear-gradient(135deg, var(--orange), var(--orange-dark));
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: transform .12s, box-shadow .2s;
+    box-shadow: 0 8px 20px rgba(244,113,46,.35);
+    font-family: inherit;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 12px 26px rgba(244,113,46,.45); }
+  .btn:active { transform: translateY(0); }
+  .btn.ocean { background: linear-gradient(135deg, var(--ocean), var(--ocean-dark)); box-shadow: 0 8px 20px rgba(33,134,122,.35); }
+  .btn.ghost { background: #fff; color: var(--navy); border: 2px solid var(--line); box-shadow: none; }
+  .btn.ghost:hover { border-color: var(--orange); }
+  .err { color: var(--red); font-size: 14px; margin-top: 8px; min-height: 18px; font-weight: 600; }
+
+  /* ---------- 퀴즈 화면 ---------- */
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .topbar .who { font-weight: 700; color: var(--ocean-dark); font-size: 15px; }
+  .topbar .count { font-weight: 800; color: var(--orange-dark); font-size: 15px; }
+  .progress { height: 8px; background: var(--line); border-radius: 99px; overflow: hidden; margin: 12px 0 22px; }
+  .progress > div { height: 100%; background: linear-gradient(90deg, var(--orange), var(--ocean)); width: 0; transition: width .3s; }
+
+  .nav-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px; margin-bottom: 24px; }
+  .nav-grid button {
+    aspect-ratio: 1;
+    border: 2px solid var(--line);
+    background: #fff;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 14px;
+    color: var(--navy);
+    cursor: pointer;
+    transition: .15s;
+    font-family: inherit;
+  }
+  .nav-grid button:hover { border-color: var(--orange); }
+  .nav-grid button.answered { background: var(--ocean); border-color: var(--ocean); color: #fff; }
+  .nav-grid button.current { border-color: var(--orange-dark); box-shadow: 0 0 0 3px rgba(255,140,66,.25); }
+
+  .qtag { display: inline-block; background: var(--cream); color: var(--orange-dark); font-weight: 800; font-size: 13px; padding: 5px 12px; border-radius: 99px; }
+  .dialogue {
+    background: linear-gradient(135deg, #fff6ec, #eefaf8);
+    border-radius: 16px;
+    padding: 20px 22px;
+    margin: 16px 0 8px;
+    border: 1px solid #f2e3d3;
+  }
+  .line { margin: 6px 0; font-size: 16.5px; }
+  .line .spk { font-weight: 800; color: var(--ocean-dark); margin-right: 6px; }
+  .line .hl { color: var(--orange-dark); font-weight: 800; }
+  .qtext { font-size: 17px; font-weight: 700; color: var(--navy); margin: 18px 0 14px; }
+
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .opt {
+    text-align: left;
+    padding: 15px 18px;
+    border: 2px solid var(--line);
+    background: #fff;
+    border-radius: 14px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: .15s;
+    font-family: inherit;
+    color: var(--ink);
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .opt .mk {
+    width: 26px; height: 26px; flex: none;
+    border-radius: 50%;
+    border: 2px solid var(--line);
+    display: grid; place-items: center;
+    font-weight: 800; font-size: 13px; color: var(--gray);
+  }
+  .opt:hover { border-color: var(--orange); }
+  .opt.selected { border-color: var(--orange-dark); background: #fff6ec; }
+  .opt.selected .mk { background: var(--orange-dark); border-color: var(--orange-dark); color: #fff; }
+
+  .footer-nav { display: flex; gap: 12px; margin-top: 24px; }
+  .footer-nav .btn { margin-top: 0; }
+
+  /* ---------- 결과 화면 ---------- */
+  .score-hero { text-align: center; }
+  .score-hero .emoji { font-size: 56px; }
+  .score-hero h2 { color: var(--navy); font-size: 26px; margin-top: 6px; }
+  .score-ring {
+    width: 160px; height: 160px; margin: 20px auto;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    background: conic-gradient(var(--ocean) var(--pct), var(--line) 0);
+  }
+  .score-ring .inner {
+    width: 128px; height: 128px; background: #fff; border-radius: 50%;
+    display: grid; place-items: center; flex-direction: column;
+  }
+  .score-ring .big { font-size: 40px; font-weight: 900; color: var(--navy); line-height: 1; }
+  .score-ring .small { font-size: 13px; color: var(--gray); margin-top: 4px; }
+  .grade { font-size: 18px; font-weight: 800; color: var(--orange-dark); }
+
+  .result-actions { margin-top: 24px; display: flex; flex-direction: column; gap: 12px; }
+  .result-actions .btn { margin-top: 0; }
+
+  .review-title { margin: 30px 0 14px; font-size: 18px; font-weight: 800; color: var(--navy); }
+  .rev {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 16px 18px;
+    margin-bottom: 12px;
+  }
+  .rev.correct { border-left: 5px solid var(--green); }
+  .rev.wrong { border-left: 5px solid var(--red); }
+  .rev .rh { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 15px; }
+  .rev .rh .ic { font-size: 17px; }
+  .rev .rh .no { color: var(--gray); }
+  .rev .rq { font-size: 14.5px; color: #555; margin: 8px 0; }
+  .rev .ans { font-size: 14.5px; margin: 3px 0; }
+  .rev .ans .lab { font-weight: 700; }
+  .rev .ans.you-wrong { color: var(--red); }
+  .rev .ans.you-ok { color: var(--green); }
+  .rev .exp {
+    margin-top: 10px; font-size: 14px; color: var(--navy);
+    background: var(--cream); padding: 10px 14px; border-radius: 10px;
+  }
+  .rev .exp b { color: var(--orange-dark); }
+
+  /* ---------- 모드 선택 ---------- */
+  .mode-box { margin-top: 24px; text-align: left; }
+  .mode-label { font-weight: 700; font-size: 15px; color: var(--navy); margin-bottom: 10px; }
+  .mode-toggle { display: flex; gap: 10px; }
+  .mode-btn {
+    flex: 1; padding: 13px; border-radius: 12px; border: 2px solid var(--line);
+    background: #fff; color: var(--gray); font-weight: 800; font-size: 15px;
+    cursor: pointer; font-family: inherit; transition: .15s;
+  }
+  .mode-btn.active { border-color: var(--ocean); background: #eafaf7; color: var(--ocean-dark); }
+  .mode-desc { font-size: 13px; color: var(--gray); margin-top: 10px; line-height: 1.5; word-break: keep-all; }
+
+  /* ---------- 타이머 · 소리 ---------- */
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+  .timer { font-weight: 800; font-size: 14px; color: var(--ocean-dark); font-variant-numeric: tabular-nums; }
+  .sound-btn { border: none; background: transparent; font-size: 18px; cursor: pointer; line-height: 1; padding: 2px; }
+  .sound-btn:hover { transform: scale(1.12); }
+
+  /* ---------- 콤보 배지 ---------- */
+  .combo { display: inline-block; margin-left: 8px; font-weight: 800; font-size: 13px; color: var(--red); animation: pop .25s ease; }
+
+  /* ---------- 연습모드 즉시 채점 ---------- */
+  .opt.reveal-correct { border-color: var(--green); background: #eaf6ea; }
+  .opt.reveal-correct .mk { background: var(--green); border-color: var(--green); color: #fff; }
+  .opt.reveal-wrong { border-color: var(--red); background: #fdecea; }
+  .opt.reveal-wrong .mk { background: var(--red); border-color: var(--red); color: #fff; }
+  .opt.locked { cursor: default; pointer-events: none; }
+  .feedback { margin-top: 14px; padding: 12px 16px; border-radius: 12px; font-weight: 800; font-size: 15.5px; word-break: keep-all; }
+  .feedback.ok { background: #eaf6ea; color: var(--green); }
+  .feedback.no { background: #fdecea; color: var(--red); }
+  .exp-inline { margin-top: 10px; font-size: 14px; color: var(--navy); background: var(--cream); padding: 11px 15px; border-radius: 11px; line-height: 1.6; }
+  .exp-inline b { color: var(--orange-dark); }
+
+  /* ---------- 결과 스탯 ---------- */
+  .stat-row { display: flex; gap: 10px; margin: 18px 0 4px; }
+  .stat { flex: 1; background: var(--cream); border-radius: 14px; padding: 12px 6px; text-align: center; }
+  .stat .v { font-weight: 900; font-size: 19px; color: var(--navy); }
+  .stat .l { font-size: 12px; color: var(--gray); margin-top: 3px; }
+
+  /* ---------- 컨페티 ---------- */
+  .confetti-canvas { position: fixed; inset: 0; z-index: 1500; pointer-events: none; }
+  .confetti-canvas.hidden { display: none; }
+
+  @media (max-width: 520px) {
+    .card { padding: 28px 20px; }
+    .nav-grid { grid-template-columns: repeat(5, 1fr); }
+    .hero h1 { font-size: 25px; }
+    .topbar { padding-left: 42px; }   /* 홈 버튼과 겹치지 않게 */
+    .timer { font-size: 12px; }
+    .stat .v { font-size: 17px; }
+  }
+</style>
+
+<div class="app">
+
+  <!-- 홈 버튼 (첫 화면으로) -->
+  <button id="homeBtn" class="home-btn hidden" onclick="goHome()" title="처음으로" aria-label="처음으로">🏠</button>
+
+  <!-- 홈 이동 확인 모달 -->
+  <div id="confirmModal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="m-emoji">🏠</div>
+      <p>첫 화면으로 돌아갈까요?<br>지금 풀던 답안은 저장되지 않아요.</p>
+      <div class="modal-btns">
+        <button class="btn ghost" onclick="closeConfirm()">취소</button>
+        <button class="btn" onclick="confirmHome()">나가기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 제출 확인 모달 -->
+  <div id="submitModal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="m-emoji">📝</div>
+      <p id="submitModalMsg"></p>
+      <div class="modal-btns">
+        <button class="btn ghost" onclick="closeSubmitModal()">계속 풀기</button>
+        <button class="btn ocean" onclick="confirmSubmit()">결과 보기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 시작 화면 -->
+  <div id="startScreen" class="card">
+    <div class="hero">
+      <span class="emoji">🍊</span>
+      <h1>제주 방언 퀴즈</h1>
+      <div class="sub">혼저 옵서예! (어서 오세요!)</div>
+      <p class="desc">제주 사람들의 정겨운 사투리, 얼마나 알고 있나 마씀?<br>짧은 대화를 읽고 알맞은 뜻을 골라보세요. 한 세트에 20문제, 총 40문제!</p>
+    </div>
+    <div class="name-box">
+      <label for="nameInput">이름을 입력해 주세요</label>
+      <input type="text" id="nameInput" placeholder="예) 김제주" maxlength="20" autocomplete="off">
+      <div class="err" id="nameErr"></div>
+    </div>
+    <div class="mode-box">
+      <div class="mode-label">모드 선택</div>
+      <div class="mode-toggle">
+        <button id="modeExam" class="mode-btn active" onclick="setMode(false)">📝 시험 모드</button>
+        <button id="modePractice" class="mode-btn" onclick="setMode(true)">💡 연습 모드</button>
+      </div>
+      <div class="mode-desc" id="modeDesc">시험 모드: 20문제를 끝까지 푼 뒤 점수와 해설을 확인해요.</div>
+    </div>
+    <button class="btn" onclick="startQuiz()">퀴즈 시작하기 🚀</button>
+  </div>
+
+  <!-- 퀴즈 화면 -->
+  <div id="quizScreen" class="card hidden">
+    <div class="topbar">
+      <span class="who" id="whoLabel">🙋 김제주 님</span>
+      <span class="topbar-right">
+        <span class="timer" id="timer">⏱ 00:00</span>
+        <button class="sound-btn" id="soundBtn" onclick="toggleSound()" title="소리 켜기/끄기" aria-label="소리">🔊</button>
+        <span class="count" id="countLabel">1 / 20</span>
+      </span>
+    </div>
+    <div class="progress"><div id="progressBar"></div></div>
+
+    <div class="nav-grid" id="navGrid"></div>
+
+    <div id="questionArea"></div>
+
+    <div class="footer-nav">
+      <button class="btn ghost" id="prevBtn" onclick="goRelative(-1)">← 이전</button>
+      <button class="btn" id="nextBtn" onclick="goRelative(1)">다음 →</button>
+    </div>
+    <div style="margin-top:12px">
+      <button class="btn ocean" id="submitBtn" onclick="submitQuiz()">결과 확인하기 ✅</button>
+    </div>
+  </div>
+
+  <!-- 결과 화면 -->
+  <div id="resultScreen" class="card hidden"></div>
+
+  <!-- 컨페티(고득점 축하) -->
+  <canvas id="confetti" class="confetti-canvas hidden"></canvas>
+
+</div>
+
+<script>
+/* ---------------- 문제 데이터 (2세트 × 20문제) ----------------
+   answer: 정답 보기 인덱스(0~3). 세트마다 정답 위치를 0~3에 고루 분산(각 5문제).
+   보기들은 서로 비슷한 길이·형식으로 맞춰 정답이 티 나지 않게 구성. */
+const QUESTION_BANKS = [
+
+  /* ===== 세트 1 ===== */
+  [
+    {
+      dialogue: [["할망","밥 몬딱 먹어시냐?"],["아이","예, 몬딱 먹언마씀!"]],
+      hl: "몬딱",
+      q: "‘몬딱’은 무슨 뜻일까요?",
+      options: ["조금","모두·전부","천천히","벌써"],
+      answer: 1,
+      exp: "‘몬딱’은 <b>모두·전부·몽땅</b>이라는 뜻이에요. ‘몬딱 먹으라’는 ‘다 먹어라’는 말이에요."
+    },
+    {
+      dialogue: [["관광객","할머니, 감사합니다!"],["할망","아이고, 폭삭 속았수다~"]],
+      hl: "폭삭 속았수다",
+      q: "‘폭삭 속았수다’는 어떤 뜻일까요?",
+      options: ["깜빡 속았어요","많이 드세요","정말 반가워요","정말 수고하셨어요"],
+      answer: 3,
+      exp: "‘폭삭 속았수다’는 ‘<b>정말 수고하셨습니다</b>’라는 뜻의 제주 인사말이에요. ‘속다’가 ‘수고하다’의 의미로 쓰입니다."
+    },
+    {
+      dialogue: [["아이","시험 잘 못 봐신디 어떵허코…"],["어멍","조들지 말라, 다음엔 잘 뒐 거여."]],
+      hl: "조들다",
+      q: "‘조들지 말라’에서 ‘조들다’는 무슨 뜻일까요?",
+      options: ["걱정하다","서두르다","다투다","졸다"],
+      answer: 0,
+      exp: "‘조들다’는 <b>걱정하다·애태우다</b>는 뜻이에요. ‘조들지 말라’는 ‘걱정하지 마라’는 말이에요."
+    },
+    {
+      dialogue: [["오라방","야, 속솜허라! 하르방 주무신다."],["아이","아, 미안허우다."]],
+      hl: "속솜하다",
+      q: "‘속솜허라’는 무슨 뜻일까요?",
+      options: ["빨리 와라","일어나라","조용히 해라","비켜라"],
+      answer: 2,
+      exp: "‘속솜하다’는 <b>조용히 하다·잠잠히 있다</b>는 뜻이에요. ‘속솜허라’는 ‘조용히 해라’는 말이에요."
+    },
+    {
+      dialogue: [["손님","이 국은 뭐우꽈?"],["할망","몸국이라. 베지근허게 잘 끓였져."]],
+      hl: "베지근하다",
+      q: "국물이 ‘베지근하다’는 것은 어떤 맛일까요?",
+      options: ["맵고 얼큰하다","싱겁고 밍밍하다","진하고 구수하다","달고 새콤하다"],
+      answer: 2,
+      exp: "‘베지근하다’는 국물이 <b>진하고 구수하며 깊은 맛</b>이 난다는 제주 표현이에요. ‘몸국’은 모자반으로 끓인 제주 향토 국입니다."
+    },
+    {
+      dialogue: [["엄마","지슬 삶아둠서 이시메 먹으라."],["아이","고맙수다, 어멍!"]],
+      hl: "지슬",
+      q: "‘지슬’은 무엇일까요?",
+      options: ["감자","고구마","옥수수","밤"],
+      answer: 0,
+      exp: "‘지슬’은 <b>감자</b>를 뜻하는 제주어예요. 참고로 제주에서 ‘감저’는 고구마를 가리키니 헷갈리지 마세요!"
+    },
+    {
+      dialogue: [["할망","저 밧디 놈삐 하영 컸져."],["삼춘","올핸 농사 잘 뒈수다."]],
+      hl: "놈삐",
+      q: "‘놈삐’는 어떤 채소일까요?",
+      options: ["배추","당근","파","무"],
+      answer: 3,
+      exp: "‘놈삐’는 <b>무</b>를 뜻해요. ‘하영’은 ‘많이’라는 뜻의 자주 쓰이는 제주어입니다."
+    },
+    {
+      dialogue: [["아이","어멍 어디 이수과?"],["어멍","정지에 이시메 이레 오라."]],
+      hl: "정지",
+      q: "‘정지’는 집 안 어디를 말할까요?",
+      options: ["마당","부엌","헛간","다락방"],
+      answer: 1,
+      exp: "‘정지’는 <b>부엌</b>을 뜻하는 제주어예요. ‘이레 오라’는 ‘이리 오너라’는 말이에요."
+    },
+    {
+      dialogue: [["관광객","이 좁은 골목이 참 예뻐요."],["삼춘","이게 바로 올레우다."]],
+      hl: "올레",
+      q: "‘올레’는 무엇을 가리킬까요?",
+      options: ["바닷가 절벽","높은 산봉우리","너른 광장","집으로 드는 골목"],
+      answer: 3,
+      exp: "‘올레’는 큰길에서 <b>집 마당으로 들어가는 좁은 골목길</b>을 뜻해요. ‘제주올레’ 걷기길 이름도 여기서 왔답니다."
+    },
+    {
+      dialogue: [["아이","저 오름 꼭대기까지 올라가게!"],["아방","기여, 강 보게."]],
+      hl: "오름",
+      q: "‘오름’은 무엇일까요?",
+      options: ["깊은 동굴","작은 화산 언덕","너른 들판","작은 연못"],
+      answer: 1,
+      exp: "‘오름’은 한라산 주변에 솟은 <b>작은 화산체(기생화산) 언덕</b>이에요. 제주에는 360여 개의 오름이 있어요. ‘강 보게’는 ‘가 보자’는 뜻."
+    },
+    {
+      dialogue: [["관광객","길 좀 여쭐게요, 삼춘!"],["행인","무사 마씀? 말해봅서."]],
+      hl: "무사",
+      q: "‘무사’는 무슨 뜻일까요?",
+      options: ["언제","어떻게","왜","누구"],
+      answer: 2,
+      exp: "‘무사’는 <b>‘왜’</b>라는 뜻이에요. 제주에서 낯선 어른을 정답게 부를 때 남녀 구분 없이 ‘삼춘’이라 부릅니다."
+    },
+    {
+      dialogue: [["친구","이레 와그네 밥 먹게."],["나","응, 곧 가키여."]],
+      hl: "이레",
+      q: "‘이레 와그네’에서 ‘이레’는 무슨 뜻일까요?",
+      options: ["이쪽으로","이따가","이만큼","일주일"],
+      answer: 0,
+      exp: "‘이레’는 <b>‘이리(이쪽으로)’</b>라는 뜻이에요. ‘와그네’는 ‘와서’, ‘가키여’는 ‘갈게’라는 뜻이에요."
+    },
+    {
+      dialogue: [["아이","밖이 왁왁헌게 무서와."],["할망","걱정 말라, 불 싸주크메."]],
+      hl: "왁왁하다",
+      q: "‘왁왁하다’는 어떤 상태일까요?",
+      options: ["캄캄하다","시끄럽다","축축하다","답답하다"],
+      answer: 0,
+      exp: "‘왁왁하다’는 <b>매우 캄캄하다·깜깜하다</b>는 뜻이에요. ‘불 싸주크메’는 ‘불 켜줄게’라는 말이에요."
+    },
+    {
+      dialogue: [["엄마","저 아기 곱들락허게 생겼다."],["이웃","게메, 참 곱다."]],
+      hl: "곱들락하다",
+      q: "‘곱들락하다’는 무슨 뜻일까요?",
+      options: ["우습다","건강하다","곱고 예쁘다","조용하다"],
+      answer: 2,
+      exp: "‘곱들락하다’는 <b>곱고 예쁘장하다</b>는 뜻이에요. ‘게메’는 ‘글쎄·그러게’라는 맞장구 표현이에요."
+    },
+    {
+      dialogue: [["아이","아방은 어디 가수과?"],["어멍","바당에 궤기 낚으레 갓져."]],
+      hl: "바당",
+      q: "‘바당’은 무엇일까요?",
+      options: ["산","바다","들판","강"],
+      answer: 1,
+      exp: "‘바당’은 <b>바다</b>를 뜻하는 제주어예요. ‘궤기’는 물고기, ‘아방’은 아버지, ‘어멍’은 어머니예요."
+    },
+    {
+      dialogue: [["손님","이 떡 이름이 뭐우꽈?"],["할망","빙떡이라, 촘지름 발라 부쳤져."]],
+      hl: "촘지름",
+      q: "‘촘지름’은 무엇일까요?",
+      options: ["간장","식초","꿀","참기름"],
+      answer: 3,
+      exp: "‘촘지름’은 <b>참기름</b>을 뜻해요. ‘빙떡’은 메밀 반죽에 무를 넣어 부친 제주 전통 떡이에요."
+    },
+    {
+      dialogue: [["친구","날씨가 하도 좋안 소풍 가게!"],["나","좋수다, 어드레 감수과?"]],
+      hl: "어드레",
+      q: "‘어드레 감수과?’에서 ‘어드레’는 무슨 뜻일까요?",
+      options: ["어째서","언제쯤","어디로","얼마나"],
+      answer: 2,
+      exp: "‘어드레’는 <b>‘어디로’</b>라는 뜻이에요. ‘감수과?’는 ‘가세요?’라는 높임 표현입니다."
+    },
+    {
+      dialogue: [["아이","할망, 배 고파마씀."],["할망","기다리라, 밥 해주크메 촘앙 이시라."]],
+      hl: "촘앙 이시라",
+      q: "‘촘앙 이시라’는 무슨 뜻일까요?",
+      options: ["참고 있어라","자고 있어라","앉아 있어라","놀고 있어라"],
+      answer: 0,
+      exp: "‘촘앙 이시라’는 <b>‘참고 있어라’</b>는 뜻이에요. ‘촘다(참다)’ + ‘이시라(있어라)’의 결합이에요."
+    },
+    {
+      dialogue: [["어멍","쓰레기 아무 디나 데끼지 말앙 치우라."],["아이","예, 알아수다."]],
+      hl: "데끼다",
+      q: "‘데끼다’는 무슨 뜻일까요?",
+      options: ["줍다","던지다·버리다","씻다","숨기다"],
+      answer: 1,
+      exp: "‘데끼다’는 <b>던지다·내버리다</b>는 뜻이에요. ‘데껴불라’는 ‘던져(버려)버려라’는 말이에요."
+    },
+    {
+      dialogue: [["아이","삼춘, 나 상 받아수다!"],["삼춘","게난 얼마나 지꺼졌겠니게!"]],
+      hl: "지꺼지다",
+      q: "‘지꺼지다’는 어떤 뜻일까요?",
+      options: ["화나다","부끄럽다","지치다","기뻐하다"],
+      answer: 3,
+      exp: "‘지꺼지다’는 <b>기뻐하다·신나다</b>는 뜻이에요. ‘지꺼졍 죽어지켜’는 ‘기뻐 죽겠다’는 말이에요."
+    }
+  ],
+
+  /* ===== 세트 2 ===== */
+  [
+    {
+      dialogue: [["할망","감저 쪄시난 호꼼 먹으라."],["아이","고맙수다, 할망!"]],
+      hl: "감저",
+      q: "‘감저’는 무엇일까요?",
+      options: ["감자","옥수수","호박","고구마"],
+      answer: 3,
+      exp: "제주에서 ‘감저’는 <b>고구마</b>예요! 감자는 ‘지슬’이라고 하죠. 육지와 반대라 아주 헷갈리기 쉬워요."
+    },
+    {
+      dialogue: [["손지","할망, 아랫목이 맨도롱 했수과?"],["할망","응, 이불 속이 맨도롱 또똣허다."]],
+      hl: "맨도롱",
+      q: "‘맨도롱 했수과?’에서 ‘맨도롱’은 무슨 뜻일까요?",
+      options: ["차갑다","따뜻하다","축축하다","단단하다"],
+      answer: 1,
+      exp: "‘맨도롱하다’는 <b>알맞게 따뜻하다</b>는 뜻이에요. ‘맨도롱 또똣’은 ‘따끈따끈하게 데워진’ 느낌을 나타내는 정겨운 제주 표현이에요."
+    },
+    {
+      dialogue: [["어멍","저 구덕에 놈삐 담앙 오라."],["아이","예, 알아수다!"]],
+      hl: "구덕",
+      q: "‘구덕’은 무엇일까요?",
+      options: ["옹기 항아리","나무 지게","대나무 바구니","갈대 돗자리"],
+      answer: 2,
+      exp: "‘구덕’은 <b>대나무로 짠 제주식 바구니</b>예요. 아기를 재우는 ‘애기구덕’도 있었어요."
+    },
+    {
+      dialogue: [["할망","옛날엔 물허벅 지엉 물 질레 뎅겨신디."],["손지","엄청 무거워시켜예."]],
+      hl: "물허벅",
+      q: "‘물허벅’은 무엇일까요?",
+      options: ["물 긷는 동이","깊은 우물","물놀이 장난감","헤엄치는 물고기"],
+      answer: 0,
+      exp: "‘물허벅’은 <b>등에 지어 물을 길어 나르던 동이(항아리)</b>예요. ‘구덕’에 담아 등에 졌답니다."
+    },
+    {
+      dialogue: [["삼춘","밧일 헐 땐 갈옷이 최고여."],["아이","무사 마씀?"],["삼춘","질기고 시원허난."]],
+      hl: "갈옷",
+      q: "‘갈옷’은 어떤 옷일까요?",
+      options: ["비 올 때 비옷","감물 들인 일옷","겨울용 솜옷","잠잘 때 잠옷"],
+      answer: 1,
+      exp: "‘갈옷’은 <b>풋감 물을 들여 만든 제주 전통 노동복</b>이에요. 질기고 땀에 잘 안 달라붙어요."
+    },
+    {
+      dialogue: [["어멍","국에 마농 다져 놩 먹으라."],["아이","예, 맛있수다!"]],
+      hl: "마농",
+      q: "‘마농’은 무엇일까요?",
+      options: ["생강","양파","고추","마늘"],
+      answer: 3,
+      exp: "‘마농’은 <b>마늘</b>을 뜻하는 제주어예요."
+    },
+    {
+      dialogue: [["아이","할망, 이 고소한 가루 뭐우꽈?"],["할망","개역이여, 보리 볶앙 빻은 거."]],
+      hl: "개역",
+      q: "‘개역’은 무엇일까요?",
+      options: ["미숫가루","밀가루","설탕","소금"],
+      answer: 0,
+      exp: "‘개역’은 <b>보리 등을 볶아 빻은 미숫가루</b>예요. 여름에 물에 타 먹던 제주 간식이에요."
+    },
+    {
+      dialogue: [["삼춘","잔치엔 오메기떡이 빠지민 안 뒈주."],["아이","맛있어 보여마씀!"]],
+      hl: "오메기",
+      q: "‘오메기’떡은 무엇으로 빚은 떡일까요?",
+      options: ["흰쌀로 빚은 떡","밀로 빚은 떡","차조로 빚은 떡","감자로 빚은 떡"],
+      answer: 2,
+      exp: "‘오메기떡’은 <b>차조(좁쌀) 가루로 빚은 제주 전통 떡</b>이에요. 이 반죽으로 ‘오메기술’도 담가요."
+    },
+    {
+      dialogue: [["하르방","쉐 주게 촐 비어 와사켜."],["손지","나도 도울쿠다."]],
+      hl: "촐",
+      q: "‘촐’은 무엇일까요?",
+      options: ["마소 먹이는 꼴","불 때는 땔감","밭에 주는 거름","밭에 심는 볍씨"],
+      answer: 0,
+      exp: "‘촐’은 <b>소·말에게 먹이는 꼴(풀)</b>이에요. ‘촐 비다’는 꼴을 벤다는 뜻이에요. (‘쉐’는 소)"
+    },
+    {
+      dialogue: [["삼춘","마당에 눌 크게 눌언게."],["이웃","올핸 풍년이우다."]],
+      hl: "눌",
+      q: "‘눌’은 무엇일까요?",
+      options: ["물 긷는 우물","둘러친 돌담","곡식 쌓은 낟가리","물건 넣는 헛간"],
+      answer: 2,
+      exp: "‘눌’은 <b>짚이나 곡식을 차곡차곡 쌓아 둔 낟가리</b>예요. ‘눌 눈다’는 낟가리를 쌓는다는 뜻이에요."
+    },
+    {
+      dialogue: [["관광객","제주 옛집엔 통시가 있었다면서요?"],["삼춘","예, 돗 키우멍 쓰던 뒷간이라."]],
+      hl: "통시",
+      q: "‘통시’는 무엇일까요?",
+      options: ["불 때는 부엌","곡식 넣는 곳간","소 먹이는 외양간","돼지 치던 뒷간"],
+      answer: 3,
+      exp: "‘통시’는 <b>돼지우리와 겸했던 제주 재래식 뒷간</b>이에요. 그 돼지가 바로 ‘똥돼지’랍니다. (‘돗’은 돼지)"
+    },
+    {
+      dialogue: [["할망","방 추우난 굴묵에 불 짓엉 뎁히라."],["손지","예, 알아수다."]],
+      hl: "굴묵",
+      q: "‘굴묵’은 무엇일까요?",
+      options: ["연기 나는 굴뚝","불 때는 아궁이","높다란 다락","널찍한 마루"],
+      answer: 1,
+      exp: "‘굴묵’은 <b>제주 온돌방을 데우려 불을 때는 아궁이 공간</b>이에요."
+    },
+    {
+      dialogue: [["아이","삼춘은 어디 사수과?"],["삼춘","난 밖거리에 살곡, 하르방은 안거리에 살주."]],
+      hl: "밖거리",
+      q: "‘밖거리’는 무엇일까요?",
+      options: ["드나드는 대문","너른 마당","집의 바깥채","물건 넣는 헛간"],
+      answer: 2,
+      exp: "제주 전통집은 마당을 두고 <b>안거리(안채)</b>와 <b>밖거리(바깥채)</b>로 나뉘어요. 한 울타리에 두 채가 있는 구조랍니다."
+    },
+    {
+      dialogue: [["삼춘","우리 폭낭 아래서 만나게."],["아이","그 큰 나무 밑이 마씀?"]],
+      hl: "폭낭",
+      q: "‘폭낭’은 어떤 나무일까요?",
+      options: ["팽나무","소나무","감나무","대나무"],
+      answer: 0,
+      exp: "‘폭낭’은 <b>팽나무</b>예요. 마을 어귀에서 그늘을 주는 정자나무로, 동네 쉼터가 되어 주었어요."
+    },
+    {
+      dialogue: [["관광객","가을 오름에 하얀 풀이 가득해요!"],["삼춘","저게 어욱이우다, 바람에 살랑살랑."]],
+      hl: "어욱",
+      q: "‘어욱’은 무엇일까요?",
+      options: ["갈대","억새","벼","잔디"],
+      answer: 1,
+      exp: "‘어욱’은 <b>억새</b>를 뜻해요. 가을 제주 오름을 은빛으로 물들이는 풀이죠."
+    },
+    {
+      dialogue: [["아이","삐약삐약 빙애기 귀여워!"],["어멍","손에 곱게 쥐라이."]],
+      hl: "빙애기",
+      q: "‘빙애기’는 무엇일까요?",
+      options: ["참새","오리","제비","병아리"],
+      answer: 3,
+      exp: "‘빙애기’는 <b>병아리</b>를 뜻하는 제주어예요."
+    },
+    {
+      dialogue: [["삼춘","우리 각시가 손맛이 좋수다."],["손님","부럽수다게!"]],
+      hl: "각시",
+      q: "‘각시’는 누구를 가리킬까요?",
+      options: ["딸","이모","손녀","아내"],
+      answer: 3,
+      exp: "‘각시’는 <b>아내(색시)</b>를 뜻해요."
+    },
+    {
+      dialogue: [["아이","삼춘, 얼마나 지드려수과?"],["삼춘","한 시간 넘게 지드려신게."]],
+      hl: "지드리다",
+      q: "‘지드리다’는 무슨 뜻일까요?",
+      options: ["서두르다","기다리다","지치다","걷다"],
+      answer: 1,
+      exp: "‘지드리다’는 <b>기다리다</b>를 뜻하는 제주어예요."
+    },
+    {
+      dialogue: [["할망","아이고, 우리 손지 아꼽다!"],["손지","히히, 할망 좋아."]],
+      hl: "아꼽다",
+      q: "‘아꼽다’는 무슨 뜻일까요?",
+      options: ["귀엽다","아프다","아깝다","무섭다"],
+      answer: 0,
+      exp: "제주어 ‘아꼽다’는 <b>귀엽다·사랑스럽다</b>는 뜻이에요. 표준어 ‘아깝다’와 헷갈리기 쉬워요."
+    },
+    {
+      dialogue: [["어멍","질 미끄러우난 멩심허영 뎅겨라."],["아이","예, 멩심허쿠다!"]],
+      hl: "멩심하다",
+      q: "‘멩심허영 뎅겨라’에서 ‘멩심하다’는 무슨 뜻일까요?",
+      options: ["서두르다","뛰어가다","조심하다","노래하다"],
+      answer: 2,
+      exp: "‘멩심하다’는 <b>조심하다·명심하다</b>는 뜻이에요. (‘질’은 길, ‘뎅기다’는 다니다)"
+    }
+  ]
+
+];
+
+/* ---------------- 상태 ---------------- */
+let userName = "";
+let bankIndex = 0;                          // 현재 문제 세트(0 또는 1)
+let QUESTIONS = QUESTION_BANKS[0].slice();  // 현재 플레이 중인 문제(셔플된 사본)
+let current = 0;
+let answers = [];
+let answerTimeMs = [];       // 문제별 응답 소요 시간(ms)
+let advanceTimer = null;     // 자동 넘김 타이머
+let practiceMode = false;    // false=시험, true=연습(즉시 피드백)
+let soundOn = true;
+let roundLabel = "세트 1";
+let qStartTime = 0;          // 현재 문제 표시 시각
+let lastShownIndex = -1;
+let combo = 0, bestCombo = 0;
+let startTime = 0, tickTimer = null;
+let lastWrong = [];          // 방금 라운드의 틀린 문제(복습용)
+
+const $ = id => document.getElementById(id);
+
+$("nameInput").addEventListener("keydown", e => { if (e.key === "Enter") startQuiz(); });
+
+/* 전역 키보드: 1~4 보기 선택, ←/→ 이동, Enter(마지막 문제) 제출 */
+document.addEventListener("keydown", e => {
+  if ($("quizScreen").classList.contains("hidden")) return;      // 퀴즈 중에만
+  if (!$("confirmModal").classList.contains("hidden")) return;   // 모달 열림 시 무시
+  if (!$("submitModal").classList.contains("hidden")) return;
+  if (e.key >= "1" && e.key <= "4") {
+    const idx = +e.key - 1;
+    if (idx < QUESTIONS[current].options.length) { e.preventDefault(); choose(idx); }
+  } else if (e.key === "ArrowLeft")  { e.preventDefault(); goRelative(-1); }
+  else if (e.key === "ArrowRight") { e.preventDefault(); goRelative(1); }
+  else if (e.key === "Enter" && current === QUESTIONS.length - 1) { e.preventDefault(); submitQuiz(); }
+});
+
+/* ---------------- 모드 · 소리 ---------------- */
+function setMode(p) {
+  practiceMode = p;
+  $("modeExam").classList.toggle("active", !p);
+  $("modePractice").classList.toggle("active", p);
+  $("modeDesc").textContent = p
+    ? "연습 모드: 답을 고르면 바로 정답 여부와 해설을 보여줘요. (연속 정답 콤보!)"
+    : "시험 모드: 20문제를 끝까지 푼 뒤 점수와 해설을 확인해요.";
+}
+
+function toggleSound() {
+  soundOn = !soundOn;
+  $("soundBtn").textContent = soundOn ? "🔊" : "🔇";
+}
+
+/* ---------------- 셔플 ---------------- */
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+/* 문제 순서 + 각 문제의 보기 순서를 섞어 새 플레이 세트를 만든다 */
+function buildShuffled(list) {
+  const qs = list.map(q => {
+    const order = shuffle(q.options.map((_, i) => i));
+    return { ...q, options: order.map(i => q.options[i]), answer: order.indexOf(q.answer) };
+  });
+  return shuffle(qs);
+}
+
+/* ---------------- 타이머 ---------------- */
+function startTimer() {
+  startTime = Date.now();
+  $("timer").textContent = "⏱ 00:00";
+  tickTimer = setInterval(() => { $("timer").textContent = "⏱ " + fmtTime(Date.now() - startTime); }, 1000);
+}
+function stopTimer() { if (tickTimer) { clearInterval(tickTimer); tickTimer = null; } }
+function fmtTime(ms) {
+  const s = Math.floor(ms / 1000);
+  return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+}
+
+/* ---------------- 시작 / 라운드 ---------------- */
+function startQuiz() {
+  const val = $("nameInput").value.trim();
+  if (!val) {
+    $("nameErr").textContent = "이름을 입력해야 시작할 수 있어요!";
+    $("nameInput").focus();
+    return;
+  }
+  userName = val;
+  bankIndex = 0;
+  startRound(buildShuffled(QUESTION_BANKS[0]), "세트 1");
+}
+
+/* '다른 문제 더 풀기' — 다음 세트로 전환(2세트를 번갈아 제공) */
+function nextRound() {
+  bankIndex = (bankIndex + 1) % QUESTION_BANKS.length;
+  startRound(buildShuffled(QUESTION_BANKS[bankIndex]), "세트 " + (bankIndex + 1));
+}
+
+/* '이 세트 다시 풀기' — 같은 세트를 새로 섞어 다시 */
+function retryRound() {
+  startRound(buildShuffled(QUESTION_BANKS[bankIndex]), "세트 " + (bankIndex + 1));
+}
+
+/* '틀린 문제만 다시 풀기' */
+function retryWrong() {
+  if (!lastWrong.length) return;
+  startRound(buildShuffled(lastWrong), "틀린 문제 복습");
+}
+
+/* 주어진 문제 목록으로 라운드 시작 */
+function startRound(qs, label) {
+  clearAdvance();
+  stopTimer();
+  QUESTIONS = qs;
+  roundLabel = label;
+  answers = new Array(QUESTIONS.length).fill(null);
+  answerTimeMs = new Array(QUESTIONS.length).fill(null);
+  current = 0;
+  lastShownIndex = -1;
+  combo = 0; bestCombo = 0;
+  updateWhoLabel();
+  $("startScreen").classList.add("hidden");
+  $("resultScreen").classList.add("hidden");
+  $("quizScreen").classList.remove("hidden");
+  $("homeBtn").classList.remove("hidden");
+  startTimer();
+  buildNav();
+  render();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function updateWhoLabel() {
+  $("whoLabel").textContent = "🙋 " + userName + " · " + roundLabel + (practiceMode ? " · 연습" : "");
+}
+
+/* '🏠 홈' — 언제든 첫 화면으로 (브라우저 기본창 대신 자체 모달 사용) */
+function goHome() {
+  clearAdvance();
+  const inQuiz = !$("quizScreen").classList.contains("hidden");
+  if (inQuiz && answers.some(a => a !== null)) {
+    $("confirmModal").classList.remove("hidden");   // 풀던 중이면 확인창
+    return;
+  }
+  doHome();
+}
+
+function confirmHome() { closeConfirm(); doHome(); }
+function closeConfirm() { $("confirmModal").classList.add("hidden"); }
+
+function doHome() {
+  stopTimer();
+  $("confirmModal").classList.add("hidden");
+  $("quizScreen").classList.add("hidden");
+  $("resultScreen").classList.add("hidden");
+  $("startScreen").classList.remove("hidden");
+  $("homeBtn").classList.add("hidden");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+/* ---------------- 번호판 ---------------- */
+function buildNav() {
+  const grid = $("navGrid");
+  grid.innerHTML = "";
+  QUESTIONS.forEach((_, i) => {
+    const b = document.createElement("button");
+    b.textContent = i + 1;
+    b.onclick = () => { clearAdvance(); current = i; render(); };
+    grid.appendChild(b);
+  });
+}
+
+function updateNav() {
+  const btns = $("navGrid").children;
+  for (let i = 0; i < btns.length; i++) {
+    btns[i].className = "";
+    if (answers[i] !== null) btns[i].classList.add("answered");
+    if (i === current) btns[i].classList.add("current");
+  }
+}
+
+/* ---------------- 문제 렌더 ---------------- */
+function render() {
+  const q = QUESTIONS[current];
+  if (current !== lastShownIndex) { qStartTime = Date.now(); lastShownIndex = current; }
+
+  const dialogueHTML = q.dialogue.map(([spk, text]) => {
+    const t = text.replace(q.hl, `<span class="hl">${q.hl}</span>`);
+    return `<div class="line"><span class="spk">${spk}:</span>${t}</div>`;
+  }).join("");
+
+  const revealed = practiceMode && answers[current] !== null;   // 연습모드: 답하면 즉시 채점
+
+  const optsHTML = q.options.map((opt, i) => {
+    let cls = "opt";
+    if (revealed) {
+      if (i === q.answer) cls += " reveal-correct";
+      else if (i === answers[current]) cls += " reveal-wrong";
+      cls += " locked";
+    } else if (answers[current] === i) {
+      cls += " selected";
+    }
+    const mark = ["A","B","C","D"][i];
+    return `<button class="${cls}" onclick="choose(${i})">
+              <span class="mk">${mark}</span><span>${opt}</span>
+            </button>`;
+  }).join("");
+
+  let feedbackHTML = "";
+  if (revealed) {
+    const ok = answers[current] === q.answer;
+    feedbackHTML =
+      `<div class="feedback ${ok ? "ok" : "no"}">` +
+        (ok ? `✅ 정답이에요!${combo >= 2 ? ` 🔥 ${combo}연속!` : ""}`
+            : `❌ 아쉬워요. 정답은 ${["A","B","C","D"][q.answer]}. ${q.options[q.answer]}`) +
+      `</div><div class="exp-inline">📝 ${q.exp}</div>`;
+  }
+
+  const comboBadge = (practiceMode && !revealed && combo >= 2) ? `<span class="combo">🔥 ${combo}연속</span>` : "";
+
+  $("questionArea").innerHTML = `
+    <span class="qtag">제 ${current + 1} 문제</span>${comboBadge}
+    <div class="dialogue">${dialogueHTML}</div>
+    <div class="qtext">${q.q}</div>
+    <div class="options">${optsHTML}</div>
+    ${feedbackHTML}
+  `;
+
+  $("countLabel").textContent = (current + 1) + " / " + QUESTIONS.length;
+  $("progressBar").style.width = ((current + 1) / QUESTIONS.length * 100) + "%";
+  $("prevBtn").style.visibility = current === 0 ? "hidden" : "visible";
+  $("nextBtn").style.visibility = current === QUESTIONS.length - 1 ? "hidden" : "visible";
+  updateNav();
+}
+
+function choose(i) {
+  if (practiceMode && answers[current] !== null) return;   // 연습모드: 답한 문제는 잠금
+
+  if (answers[current] === null) answerTimeMs[current] = Date.now() - qStartTime;  // 첫 응답 시간
+  answers[current] = i;
+  const isCorrect = i === QUESTIONS[current].answer;
+
+  if (practiceMode) {
+    if (isCorrect) { combo++; bestCombo = Math.max(bestCombo, combo); }
+    else combo = 0;
+    playSound(isCorrect ? "correct" : "wrong");
+    render();                        // 즉시 채점 표시(자동 넘김 없이 해설 읽기)
+    return;
+  }
+
+  // 시험모드: 중립 소리 + 자동 넘김
+  playSound("click");
+  render();
+  clearAdvance();
+  if (current < QUESTIONS.length - 1) {
+    advanceTimer = setTimeout(() => { advanceTimer = null; current++; render(); }, 350);
+  }
+}
+
+function clearAdvance() {
+  if (advanceTimer) { clearTimeout(advanceTimer); advanceTimer = null; }
+}
+
+function goRelative(d) {
+  clearAdvance();
+  const n = current + d;
+  if (n >= 0 && n < QUESTIONS.length) { current = n; render(); }
+}
+
+/* ---------------- 제출 & 결과 ---------------- */
+function submitQuiz() {
+  clearAdvance();
+  const unanswered = answers.filter(a => a === null).length;
+  if (unanswered > 0) {
+    $("submitModalMsg").innerHTML =
+      `아직 풀지 않은 문제가 <b>${unanswered}개</b> 있어요.<br>그래도 결과를 확인할까요?` +
+      `<br><span style="color:var(--gray);font-weight:600;font-size:14px">(안 푼 문제는 오답 처리돼요)</span>`;
+    $("submitModal").classList.remove("hidden");
+    return;
+  }
+  doSubmit();
+}
+
+function confirmSubmit() { $("submitModal").classList.add("hidden"); doSubmit(); }
+function closeSubmitModal() { $("submitModal").classList.add("hidden"); }
+
+function doSubmit() {
+  stopTimer();
+  const elapsed = Date.now() - startTime;
+
+  let correct = 0, speedBonus = 0;
+  lastWrong = [];
+  QUESTIONS.forEach((q, i) => {
+    if (answers[i] === q.answer) {
+      correct++;
+      const t = answerTimeMs[i] == null ? 99999 : answerTimeMs[i];
+      if (t < 3000) speedBonus += 5;
+      else if (t < 6000) speedBonus += 3;
+      else if (t < 10000) speedBonus += 1;
+    } else {
+      lastWrong.push(q);   // 복습용(원본 문제 객체)
+    }
+  });
+  const total = QUESTIONS.length;
+  const pct = Math.round(correct / total * 100);
+  const totalScore = correct * 10 + speedBonus;
+
+  let grade, emoji;
+  if (pct === 100)      { grade = "제주 토박이 인정! 🏆"; emoji = "🏆"; }
+  else if (pct >= 80)   { grade = "제주 방언 고수우다! 🍊"; emoji = "🌟"; }
+  else if (pct >= 60)   { grade = "제법 알암수다! 👍"; emoji = "😄"; }
+  else if (pct >= 40)   { grade = "쪼끔 더 배와붑서! 📖"; emoji = "🙂"; }
+  else                  { grade = "혼저 다시 도전해봅서! 💪"; emoji = "🐣"; }
+
+  const reviewHTML = QUESTIONS.map((q, i) => {
+    const my = answers[i];
+    const isCorrect = my === q.answer;
+    const dialogueTxt = q.dialogue.map(([s, t]) => `${s}: ${t}`).join(" / ");
+    const myText = my === null ? "무응답" : `${["A","B","C","D"][my]}. ${q.options[my]}`;
+    const ansText = `${["A","B","C","D"][q.answer]}. ${q.options[q.answer]}`;
+    return `
+      <div class="rev ${isCorrect ? "correct" : "wrong"}">
+        <div class="rh">
+          <span class="ic">${isCorrect ? "✅" : "❌"}</span>
+          <span class="no">${i + 1}번</span>
+          <span>${q.hl}</span>
+        </div>
+        <div class="rq">💬 ${dialogueTxt}</div>
+        <div class="ans ${isCorrect ? "you-ok" : "you-wrong"}"><span class="lab">내 답:</span> ${myText}</div>
+        ${isCorrect ? "" : `<div class="ans you-ok"><span class="lab">정답:</span> ${ansText}</div>`}
+        <div class="exp">📝 ${q.exp}</div>
+      </div>`;
+  }).join("");
+
+  const nextSetNo = (bankIndex + 1) % QUESTION_BANKS.length + 1;
+  const wrongBtn = lastWrong.length
+    ? `<button class="btn ghost" onclick="retryWrong()">❌ 틀린 문제만 다시 풀기 (${lastWrong.length})</button>` : "";
+
+  $("quizScreen").classList.add("hidden");
+  const rs = $("resultScreen");
+  rs.classList.remove("hidden");
+  rs.innerHTML = `
+    <div class="score-hero">
+      <span class="emoji">${emoji}</span>
+      <h2>${userName} 님의 결과 <span style="font-size:16px;color:var(--gray)">(${roundLabel})</span></h2>
+      <div class="score-ring" style="--pct:${pct}%">
+        <div class="inner">
+          <span class="big">${correct}/${total}</span>
+          <span class="small">${pct}점</span>
+        </div>
+      </div>
+      <div class="grade">${grade}</div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat"><div class="v">🏆 ${totalScore}</div><div class="l">총점</div></div>
+      <div class="stat"><div class="v">⚡ +${speedBonus}</div><div class="l">속도 보너스</div></div>
+      <div class="stat"><div class="v">⏱ ${fmtTime(elapsed)}</div><div class="l">걸린 시간</div></div>
+    </div>
+
+    <div class="result-actions">
+      <button class="btn ocean" onclick="nextRound()">🔁 다른 문제 더 풀기 (세트 ${nextSetNo})</button>
+      ${wrongBtn}
+      <button class="btn ghost" onclick="retryRound()">↺ 이 세트 다시 풀기</button>
+    </div>
+
+    <div class="review-title">📚 문제별 해설</div>
+    ${reviewHTML}
+  `;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+
+  if (pct >= 80) { playSound("fanfare"); runConfetti(); }
+}
+
+/* ---------------- 효과음 (Web Audio) ---------------- */
+let audioCtx = null;
+function tone(freq, startOffset, dur, type) {
+  const t0 = audioCtx.currentTime + startOffset;
+  const osc = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  osc.type = type || "sine";
+  osc.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(0.25, t0 + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  osc.connect(g); g.connect(audioCtx.destination);
+  osc.start(t0); osc.stop(t0 + dur + 0.02);
+}
+function playSound(kind) {
+  if (!soundOn) return;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    if (kind === "correct") { tone(660, 0, 0.13); tone(880, 0.11, 0.16); }
+    else if (kind === "wrong") { tone(196, 0, 0.28, "sawtooth"); }
+    else if (kind === "click") { tone(520, 0, 0.05, "triangle"); }
+    else if (kind === "fanfare") { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.13, 0.2)); }
+  } catch (e) {}
+}
+
+/* ---------------- 컨페티 (고득점 축하) ---------------- */
+function runConfetti() {
+  const cv = $("confetti");
+  cv.classList.remove("hidden");
+  const ctx = cv.getContext("2d");
+  cv.width = window.innerWidth;
+  cv.height = window.innerHeight;
+  const colors = ["#ff8c42", "#2a9d8f", "#f4712e", "#ffd166", "#43a047", "#e76f51"];
+  const parts = Array.from({ length: 150 }, () => ({
+    x: Math.random() * cv.width,
+    y: -20 - Math.random() * cv.height * 0.4,
+    r: 6 + Math.random() * 8,
+    c: colors[Math.floor(Math.random() * colors.length)],
+    vx: -2.5 + Math.random() * 5,
+    vy: 2 + Math.random() * 4,
+    rot: Math.random() * 6.28,
+    vr: -0.2 + Math.random() * 0.4
+  }));
+  let frame = 0;
+  function step() {
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    parts.forEach(p => {
+      p.x += p.vx; p.y += p.vy; p.vy += 0.05; p.rot += p.vr;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle = p.c;
+      ctx.fillRect(-p.r / 2, -p.r / 2, p.r, p.r * 0.6);
+      ctx.restore();
+    });
+    frame++;
+    if (frame < 200) requestAnimationFrame(step);
+    else cv.classList.add("hidden");
+  }
+  requestAnimationFrame(step);
+}
+</script>

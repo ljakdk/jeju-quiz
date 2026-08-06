@@ -343,6 +343,21 @@
   }
   .modal .reset-input:focus { border-color: var(--ocean); }
 
+  /* ---------- 배운 점 메모/게시판 ---------- */
+  .memo-box { margin-top: 22px; text-align: left; }
+  .memo-title { display: block; font-weight: 800; color: var(--navy); font-size: 16px; margin-bottom: 10px; }
+  .memo-box textarea {
+    width: 100%; min-height: 84px; padding: 13px 15px; font-size: 15px; font-family: inherit;
+    line-height: 1.6; border: 2px solid var(--line); border-radius: 12px; outline: none; resize: vertical;
+  }
+  .memo-box textarea:focus { border-color: var(--ocean); }
+  .memo-box textarea:disabled { background: #f5f5f5; color: #888; }
+  .memo-count { text-align: right; font-size: 12px; color: var(--gray); margin-top: 6px; }
+  .list-count { font-size: 13px; font-weight: 700; color: var(--ocean-dark); margin-bottom: 12px; }
+  .memo-post { border: 1px solid var(--line); border-left: 5px solid var(--ocean); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; background: #fff; }
+  .memo-post-name { font-weight: 800; color: var(--navy); font-size: 14.5px; margin-bottom: 6px; }
+  .memo-post-text { font-size: 14.5px; color: #444; line-height: 1.6; word-break: keep-all; white-space: pre-wrap; }
+
   /* ---------- 컨페티 ---------- */
   .confetti-canvas { position: fixed; inset: 0; z-index: 1500; pointer-events: none; }
   .confetti-canvas.hidden { display: none; }
@@ -426,6 +441,7 @@
       </div>
       <button class="btn" onclick="startQuiz()">퀴즈 시작하기 🚀</button>
       <button class="btn ghost" id="startRankBtn" onclick="openRank('start')" style="margin-top:12px">🏆 우리 반 랭킹 보기</button>
+      <button class="btn ghost hidden" id="startLearnBtn" onclick="openLearn('start')" style="margin-top:12px">📚 우리 반 배운 점 보기</button>
     </div>
   </div>
 
@@ -461,6 +477,19 @@
     <div id="rankList" class="rank-list"></div>
     <button class="btn ghost room-reset-btn hidden" id="rankResetBtn" onclick="openResetModal()">🧹 우리 반 점수 초기화 (선생님)</button>
     <button class="btn" onclick="closeRank()" style="margin-top:20px">← 돌아가기</button>
+  </div>
+
+  <!-- 배운 점 게시판 화면 -->
+  <div id="learnScreen" class="card hidden">
+    <div class="rank-head">
+      <div>
+        <h2 class="rank-title">📚 우리 반이 새롭게 알게 된 점</h2>
+        <div class="rank-sub">친구들이 오늘 배운 점을 함께 봐요</div>
+      </div>
+      <button class="btn ghost rank-refresh" onclick="loadReflections()">🔄 새로고침</button>
+    </div>
+    <div id="learnList" class="rank-list"></div>
+    <button class="btn" onclick="closeLearn()" style="margin-top:20px">← 돌아가기</button>
   </div>
 
   <!-- 퀴즈 화면 -->
@@ -858,6 +887,8 @@ let currentRoundRanked = true;  // 이번 라운드가 랭킹·최고기록 반�
 let rankReturnTo = "start";     // 랭킹 화면에서 '돌아가기' 시 복귀할 화면
 let currentRoom = null;         // 현재 입장한 학급 방 {code, name} 또는 null
 let createdRoom = null;         // 방금 만든 방(임시)
+let lastQrUrl = "";             // 방금 만든 방의 QR 이미지 주소(다운로드용)
+let learnReturnTo = "start";    // 배운 점 게시판에서 '돌아가기' 시 복귀할 화면
 
 const $ = id => document.getElementById(id);
 
@@ -958,6 +989,7 @@ function startRound(qs, label, ranked) {
   $("startScreen").classList.add("hidden");
   $("resultScreen").classList.add("hidden");
   $("rankScreen").classList.add("hidden");
+  $("learnScreen").classList.add("hidden");
   $("quizScreen").classList.remove("hidden");
   $("homeBtn").classList.remove("hidden");
   startTimer();
@@ -990,6 +1022,7 @@ function doHome() {
   $("quizScreen").classList.add("hidden");
   $("resultScreen").classList.add("hidden");
   $("rankScreen").classList.add("hidden");
+  $("learnScreen").classList.add("hidden");
   $("startScreen").classList.remove("hidden");
   $("homeBtn").classList.add("hidden");
   renderBestBadge();
@@ -1111,9 +1144,9 @@ function doSubmit() {
   const pct = Math.round(correct / total * 100);
   const totalScore = correct * 10 + speedBonus;
 
-  // 내 최고 기록(이 기기) 갱신 — 전체 세트 라운드만
+  // 내 최고 기록(이 기기) 갱신 — 전체 세트 라운드 + 방이 아닐 때만
   let newRecord = false;
-  if (currentRoundRanked) {
+  if (currentRoundRanked && !currentRoom) {
     const b = getBest();
     if (!b || totalScore > b.score) {
       newRecord = true;
@@ -1157,6 +1190,15 @@ function doSubmit() {
   const comboNote = bestCombo >= 2 ? `<div class="combo-note">🔥 이번 최고 ${bestCombo}연속!</div>` : "";
   const rankBtn = (RANK_ON() && currentRoundRanked)
     ? `<button class="btn ocean" onclick="openRank('result')">${currentRoom ? "🏆 우리 반 랭킹 보기" : "🏆 전체 랭킹 보기"}</button>` : "";
+  const memoHTML = (RANK_ON() && currentRoom) ? `
+    <div class="memo-box">
+      <label class="memo-title" for="memoInput">📝 오늘 새롭게 알게 된 점</label>
+      <textarea id="memoInput" placeholder="예) ‘지슬’이 감자라는 걸 처음 알았다! ‘감저’는 고구마라서 헷갈렸다." maxlength="300"></textarea>
+      <div class="memo-count"><span id="memoCount">0</span> / 300</div>
+      <div class="rank-status" id="memoStatus"></div>
+      <button class="btn ocean" id="memoBtn" onclick="submitReflection()" style="margin-top:0">📚 배운 점 게시판에 올리기</button>
+      <button class="btn ghost" onclick="openLearn('result')" style="margin-top:10px">우리 반 배운 점 보기</button>
+    </div>` : "";
 
   $("quizScreen").classList.add("hidden");
   const rs = $("resultScreen");
@@ -1192,10 +1234,16 @@ function doSubmit() {
       <button class="btn ghost" onclick="retryRound()">↺ 이 세트 다시 풀기</button>
     </div>
 
+    ${memoHTML}
+
     <div class="review-title">📚 문제별 해설</div>
     ${reviewHTML}
   `;
   window.scrollTo({ top: 0, behavior: "smooth" });
+
+  // 배운 점 글자 수 표시
+  const memoEl = $("memoInput");
+  if (memoEl) memoEl.addEventListener("input", () => { const c = $("memoCount"); if (c) c.textContent = memoEl.value.length; });
 
   if (pct >= 80) { playSound("fanfare"); runConfetti(); }
 
@@ -1225,6 +1273,86 @@ async function showStanding(myScore) {
     const el = $("standing");
     if (el) el.innerHTML = `🏫 우리 반에서 <b>${rank}등</b> / ${total}명!`;
   } catch (e) {}
+}
+
+/* ---------------- 배운 점 게시판 ---------------- */
+function setMemoStatus(msg, kind) {
+  const el = $("memoStatus");
+  if (el) { el.textContent = msg; el.className = "rank-status " + (kind || ""); }
+}
+
+async function submitReflection() {
+  const ta = $("memoInput");
+  if (!ta) return;
+  const text = ta.value.trim();
+  if (!text) { setMemoStatus("내용을 입력해 주세요.", "warn"); return; }
+  if (!RANK_ON() || !currentRoom) { setMemoStatus("방에 입장한 상태에서만 올릴 수 있어요.", "warn"); return; }
+  setMemoStatus("⏳ 올리는 중…", "");
+  try {
+    const ok = await fetch(SUPABASE_URL + "/rest/v1/reflections", {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY,
+        "Content-Type": "application/json", Prefer: "return=minimal"
+      },
+      body: JSON.stringify({ room: currentRoom.code, name: userName, text: text })
+    }).then(r => r.ok);
+    if (ok) {
+      ta.disabled = true;
+      const b = $("memoBtn");
+      if (b) { b.disabled = true; b.style.opacity = ".55"; b.style.cursor = "default"; b.textContent = "✅ 올렸어요!"; }
+      setMemoStatus("✅ 게시판에 올렸어요! 아래 ‘우리 반 배운 점 보기’로 친구들 글도 볼 수 있어요.", "");
+    } else {
+      setMemoStatus("⚠️ 올리기 실패 — 잠시 후 다시 시도해 주세요.", "warn");
+    }
+  } catch (e) {
+    setMemoStatus("⚠️ 올리기 실패 — 인터넷을 확인해 주세요.", "warn");
+  }
+}
+
+function openLearn(from) {
+  learnReturnTo = from || "start";
+  ["startScreen", "quizScreen", "resultScreen", "rankScreen"].forEach(id => $(id).classList.add("hidden"));
+  $("learnScreen").classList.remove("hidden");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  loadReflections();
+}
+function closeLearn() {
+  $("learnScreen").classList.add("hidden");
+  $(learnReturnTo === "result" ? "resultScreen" : "startScreen").classList.remove("hidden");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+async function loadReflections() {
+  const list = $("learnList");
+  if (!RANK_ON() || !currentRoom) {
+    list.innerHTML = `<div class="rank-empty">방에 입장하면 우리 반 글을 볼 수 있어요.</div>`;
+    return;
+  }
+  list.innerHTML = `<div class="rank-empty">⏳ 불러오는 중…</div>`;
+  try {
+    const res = await fetch(
+      SUPABASE_URL + "/rest/v1/reflections?room=eq." + encodeURIComponent(currentRoom.code) + "&select=name,text,created_at&order=created_at.desc&limit=300",
+      { headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY } }
+    );
+    if (!res.ok) throw new Error("http " + res.status);
+    renderReflections(await res.json());
+  } catch (e) {
+    list.innerHTML = `<div class="rank-empty">⚠️ 불러오지 못했어요.<br>인터넷 연결과 설정을 확인해 주세요.</div>`;
+  }
+}
+
+function renderReflections(rows) {
+  const list = $("learnList");
+  if (!Array.isArray(rows) || !rows.length) {
+    list.innerHTML = `<div class="rank-empty">아직 올라온 글이 없어요. 첫 글을 남겨보세요! 🍊</div>`;
+    return;
+  }
+  list.innerHTML = `<div class="list-count">총 ${rows.length}개의 글</div>` + rows.map(r => `
+    <div class="memo-post">
+      <div class="memo-post-name">🙋 ${esc(r.name)}</div>
+      <div class="memo-post-text">${esc(r.text)}</div>
+    </div>`).join("");
 }
 
 /* ---------------- 효과음 (Web Audio) ---------------- */
@@ -1301,7 +1429,7 @@ function renderBestBadge() {
   const el = $("bestBadge");
   if (!el) return;
   const b = getBest();
-  if (b) {
+  if (b && !currentRoom) {   // 방(링크·QR)으로 입장한 경우엔 개인 최고기록을 표시하지 않음
     el.classList.remove("hidden");
     const comboPart = b.combo ? ` · 🔥 최고 ${b.combo}연속` : "";
     el.innerHTML = `🏅 내 최고 기록 · <span class="hl2">🏆 ${b.score}점</span> · 정확도 ${b.pct}%${comboPart}`;
@@ -1332,7 +1460,7 @@ function openRank(from) {
   $("rankTitle").textContent = currentRoom ? ("🏆 " + currentRoom.name + " 랭킹") : "🏆 전체 랭킹";
   $("rankSub").textContent = currentRoom ? "우리 반 학생들의 점수 순위예요" : "링크로 접속한 모두의 점수 순위예요";
   $("rankResetBtn").classList.toggle("hidden", !currentRoom);   // 방일 때만 초기화 버튼(선생님)
-  ["startScreen", "quizScreen", "resultScreen"].forEach(id => $(id).classList.add("hidden"));
+  ["startScreen", "quizScreen", "resultScreen", "learnScreen"].forEach(id => $(id).classList.add("hidden"));
   $("rankScreen").classList.remove("hidden");
   window.scrollTo({ top: 0, behavior: "smooth" });
   loadLeaderboard();
@@ -1433,12 +1561,14 @@ function renderRoomBanner() {
 /* 시작 화면 상태 갱신: 방 있으면(학생) 퀴즈 영역, 없으면(선생님) 방 만들기 영역 */
 function refreshStartButtons() {
   renderRoomBanner();
+  renderBestBadge();   // 방 감지 후에도 배지 상태(표시/숨김) 재평가
   const inRoom = Boolean(currentRoom);
   const teacherMode = !inRoom && RANK_ON();   // 방 없이 접속 + 백엔드 있음 → 선생님(방 만들기 전용)
   $("teacherArea").classList.toggle("hidden", !teacherMode);
   $("playArea").classList.toggle("hidden", teacherMode);
   $("startRankBtn").textContent = inRoom ? "🏆 우리 반 랭킹 보기" : "🏆 전체 랭킹 보기";
   $("startRankBtn").classList.toggle("hidden", !RANK_ON());
+  $("startLearnBtn").classList.toggle("hidden", !(RANK_ON() && inRoom));   // 배운 점 게시판은 방에서만
 }
 
 /* --- 방 만들기 화면 --- */
@@ -1450,7 +1580,7 @@ function openRoomCreate() {
   $("roomForm").classList.remove("hidden");
   $("roomResult").classList.add("hidden");
   $("roomResult").innerHTML = "";
-  ["startScreen", "quizScreen", "resultScreen", "rankScreen"].forEach(id => $(id).classList.add("hidden"));
+  ["startScreen", "quizScreen", "resultScreen", "rankScreen", "learnScreen"].forEach(id => $(id).classList.add("hidden"));
   $("roomScreen").classList.remove("hidden");
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -1480,7 +1610,8 @@ async function doCreateRoom() {
 
 function showRoomResult(code, name) {
   const link = roomLink(code);
-  const qr = "https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=" + encodeURIComponent(link);
+  const qr = "https://api.qrserver.com/v1/create-qr-code/?size=440x440&margin=12&data=" + encodeURIComponent(link);
+  lastQrUrl = qr;
   $("roomForm").classList.add("hidden");
   const rr = $("roomResult");
   rr.classList.remove("hidden");
@@ -1488,7 +1619,8 @@ function showRoomResult(code, name) {
     <div class="room-made">✅ <b>${esc(name)}</b> 방이 만들어졌어요!</div>
     <div class="room-code-big">${esc(code)}</div>
     <img class="room-qr" src="${qr}" alt="방 입장 QR 코드">
-    <div class="room-link-box">
+    <button class="btn ghost" onclick="downloadQR()" style="margin-top:0">📥 QR 이미지 저장</button>
+    <div class="room-link-box" style="margin-top:12px">
       <input id="roomLinkInput" type="text" readonly value="${esc(link)}">
       <button class="btn ghost" onclick="copyRoomLink()">복사</button>
     </div>
@@ -1496,6 +1628,28 @@ function showRoomResult(code, name) {
     <button class="btn ocean" onclick="enterCreatedRoom()" style="margin-top:14px">이 방으로 입장</button>
     <button class="btn ghost" onclick="doHome()" style="margin-top:10px">처음으로</button>
   `;
+}
+
+/* QR 이미지를 파일로 저장 */
+async function downloadQR() {
+  if (!lastQrUrl) return;
+  const fname = "제주방언퀴즈_" + (createdRoom ? createdRoom.code : "방") + "_QR.png";
+  try {
+    const res = await fetch(lastQrUrl);
+    const blob = await res.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = fname;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    const h = $("roomShareHint");
+    if (h) h.textContent = "✅ QR 이미지를 저장했어요! (" + fname + ")";
+  } catch (e) {
+    window.open(lastQrUrl, "_blank");   // 실패 시 새 탭에서 열어 수동 저장
+    const h = $("roomShareHint");
+    if (h) h.textContent = "QR을 새 탭에서 열었어요. 이미지를 길게 눌러(우클릭) 저장하세요.";
+  }
 }
 
 async function copyRoomLink() {

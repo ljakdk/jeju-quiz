@@ -1250,8 +1250,10 @@ function doSubmit() {
   // 랭킹에 점수 등록(전체 세트 라운드 + 설정된 경우)
   if (RANK_ON() && currentRoundRanked) {
     setRankStatus("⏳ 순위 등록 중…");
-    submitScore(userName, totalScore, pct, Math.round(elapsed / 1000)).then(ok => {
-      setRankStatus(ok ? (currentRoom ? "✅ 우리 반 랭킹에 등록됐어요!" : "✅ 전체 랭킹에 등록됐어요!")
+    submitScore(userName, totalScore, pct, Math.round(elapsed / 1000)).then(attempt => {
+      const ok = attempt != null;
+      const roundInfo = (ok && attempt >= 2) ? ` (${attempt}회차 기록으로 갱신)` : "";
+      setRankStatus(ok ? ((currentRoom ? "✅ 우리 반 랭킹에 등록됐어요!" : "✅ 전체 랭킹에 등록됐어요!") + roundInfo)
                        : "⚠️ 순위 등록 실패 — 인터넷을 확인해 주세요.");
       if (ok) showStanding(totalScore);   // 우리 반 등수 표시
     });
@@ -1441,18 +1443,13 @@ function renderBestBadge() {
 /* ---------------- 전체 랭킹(Supabase) ---------------- */
 function setRankStatus(msg) { const el = $("rankStatus"); if (el) el.textContent = msg; }
 
+/* 같은 (방·이름)의 이전 점수는 지우고 최신 1개만 남기며, 회차(attempt)를 반환 */
 function submitScore(name, score, pct, secs) {
-  if (!RANK_ON()) return Promise.resolve(false);
-  return fetch(SUPABASE_URL + "/rest/v1/scores", {
-    method: "POST",
-    headers: {
-      apikey: SUPABASE_ANON_KEY,
-      Authorization: "Bearer " + SUPABASE_ANON_KEY,
-      "Content-Type": "application/json",
-      Prefer: "return=minimal"
-    },
-    body: JSON.stringify({ name: name, score: score, pct: pct, secs: secs, room: currentRoom ? currentRoom.code : null })
-  }).then(r => r.ok).catch(() => false);
+  if (!RANK_ON()) return Promise.resolve(null);
+  return rpc("submit_score", {
+    p_room: currentRoom ? currentRoom.code : null,
+    p_name: name, p_score: score, p_pct: pct, p_secs: secs
+  }).then(attempt => (typeof attempt === "number" ? attempt : null)).catch(() => null);
 }
 
 function openRank(from) {
@@ -1481,7 +1478,7 @@ async function loadLeaderboard() {
   const filter = currentRoom ? ("room=eq." + encodeURIComponent(currentRoom.code)) : "room=is.null";
   try {
     const res = await fetch(
-      SUPABASE_URL + "/rest/v1/scores?" + filter + "&select=name,score,pct,secs&order=score.desc,secs.asc&limit=50",
+      SUPABASE_URL + "/rest/v1/scores?" + filter + "&select=name,score,pct,secs,attempt&order=score.desc,secs.asc&limit=50",
       { headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY } }
     );
     if (!res.ok) throw new Error("http " + res.status);
@@ -1508,7 +1505,7 @@ function renderRank(rows) {
         <span class="rank-no">${medal}</span>
         <span class="rank-name">${esc(r.name)}${isMe ? " (나)" : ""}</span>
         <span class="rank-score">🏆 ${r.score}</span>
-        <span class="rank-meta">${r.pct}% · ${fmtTime((r.secs || 0) * 1000)}</span>
+        <span class="rank-meta">${r.pct}% · ${fmtTime((r.secs || 0) * 1000)}${r.attempt >= 2 ? " · " + r.attempt + "회차" : ""}</span>
       </div>`;
   }).join("");
 }

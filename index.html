@@ -284,6 +284,12 @@
   }
   .best-badge .hl2 { color: var(--orange-dark); }
   .newrecord { margin: 14px 0 2px; text-align: center; font-weight: 800; color: var(--orange-dark); font-size: 16px; animation: pop .3s ease; }
+  .combo-note { margin: 8px 0 2px; text-align: center; font-weight: 800; color: var(--red); font-size: 15px; }
+  .standing { margin: 16px 0 2px; text-align: center; font-weight: 800; color: var(--ocean-dark); font-size: 18px; animation: pop .3s ease; }
+  .standing:empty { display: none; }
+  .standing b { color: var(--orange-dark); }
+  .req { color: var(--red); font-weight: 700; font-size: 13px; }
+  .teacher-note { color: var(--gray); font-size: 14.5px; text-align: center; margin: 20px 0 6px; line-height: 1.6; word-break: keep-all; }
 
   /* ---------- 랭킹 ---------- */
   .rank-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
@@ -403,23 +409,24 @@
       <p class="desc">제주 사람들의 정겨운 사투리, 얼마나 알고 있나 마씀?<br>짧은 대화를 읽고 알맞은 뜻을 골라보세요. 한 세트에 20문제, 총 40문제!</p>
     </div>
     <div class="room-banner hidden" id="roomBanner"></div>
-    <div class="best-badge hidden" id="bestBadge"></div>
-    <div class="name-box">
-      <label for="nameInput">이름을 입력해 주세요</label>
-      <input type="text" id="nameInput" placeholder="예) 김제주" maxlength="20" autocomplete="off">
-      <div class="err" id="nameErr"></div>
+
+    <!-- 선생님(방 없이 접속): 방 만들기 전용 -->
+    <div id="teacherArea" class="hidden">
+      <p class="teacher-note">학생들과 함께 풀려면 먼저 <b>학급 방</b>을 만들어<br>링크·QR을 학생들에게 공유하세요.</p>
+      <button class="btn" onclick="openRoomCreate()">🏫 학급 방 만들기</button>
     </div>
-    <div class="mode-box">
-      <div class="mode-label">모드 선택</div>
-      <div class="mode-toggle">
-        <button id="modeExam" class="mode-btn active" onclick="setMode(false)">📝 시험 모드</button>
-        <button id="modePractice" class="mode-btn" onclick="setMode(true)">💡 연습 모드</button>
+
+    <!-- 학생(방으로 입장): 퀴즈 풀기 -->
+    <div id="playArea" class="hidden">
+      <div class="best-badge hidden" id="bestBadge"></div>
+      <div class="name-box">
+        <label for="nameInput">이름을 입력해 주세요 <span class="req">(반드시 실명으로 입력)</span></label>
+        <input type="text" id="nameInput" placeholder="예) 김제주" maxlength="20" autocomplete="off">
+        <div class="err" id="nameErr"></div>
       </div>
-      <div class="mode-desc" id="modeDesc">시험 모드: 20문제를 끝까지 푼 뒤 점수와 해설을 확인해요.</div>
+      <button class="btn" onclick="startQuiz()">퀴즈 시작하기 🚀</button>
+      <button class="btn ghost" id="startRankBtn" onclick="openRank('start')" style="margin-top:12px">🏆 우리 반 랭킹 보기</button>
     </div>
-    <button class="btn" onclick="startQuiz()">퀴즈 시작하기 🚀</button>
-    <button class="btn ghost hidden" id="startRankBtn" onclick="openRank('start')" style="margin-top:12px">🏆 전체 랭킹 보기</button>
-    <button class="btn ghost hidden" id="makeRoomBtn" onclick="openRoomCreate()" style="margin-top:12px">🏫 학급 방 만들기 (선생님)</button>
   </div>
 
   <!-- 학급 방 만들기 화면 -->
@@ -840,7 +847,6 @@ let current = 0;
 let answers = [];
 let answerTimeMs = [];       // 문제별 응답 소요 시간(ms)
 let advanceTimer = null;     // 자동 넘김 타이머
-let practiceMode = false;    // false=시험, true=연습(즉시 피드백)
 let soundOn = true;
 let roundLabel = "세트 1";
 let qStartTime = 0;          // 현재 문제 표시 시각
@@ -870,16 +876,7 @@ document.addEventListener("keydown", e => {
   else if (e.key === "Enter" && current === QUESTIONS.length - 1) { e.preventDefault(); submitQuiz(); }
 });
 
-/* ---------------- 모드 · 소리 ---------------- */
-function setMode(p) {
-  practiceMode = p;
-  $("modeExam").classList.toggle("active", !p);
-  $("modePractice").classList.toggle("active", p);
-  $("modeDesc").textContent = p
-    ? "연습 모드: 답을 고르면 바로 정답 여부와 해설을 보여줘요. (연속 정답 콤보!)"
-    : "시험 모드: 20문제를 끝까지 푼 뒤 점수와 해설을 확인해요.";
-}
-
+/* ---------------- 소리 ---------------- */
 function toggleSound() {
   soundOn = !soundOn;
   $("soundBtn").textContent = soundOn ? "🔊" : "🔇";
@@ -970,7 +967,7 @@ function startRound(qs, label, ranked) {
 }
 
 function updateWhoLabel() {
-  $("whoLabel").textContent = "🙋 " + userName + " · " + roundLabel + (practiceMode ? " · 연습" : "");
+  $("whoLabel").textContent = "🙋 " + userName + " · " + roundLabel;
 }
 
 /* '🏠 홈' — 언제든 첫 화면으로 (브라우저 기본창 대신 자체 모달 사용) */
@@ -1031,41 +1028,19 @@ function render() {
     return `<div class="line"><span class="spk">${spk}:</span>${t}</div>`;
   }).join("");
 
-  const revealed = practiceMode && answers[current] !== null;   // 연습모드: 답하면 즉시 채점
-
   const optsHTML = q.options.map((opt, i) => {
-    let cls = "opt";
-    if (revealed) {
-      if (i === q.answer) cls += " reveal-correct";
-      else if (i === answers[current]) cls += " reveal-wrong";
-      cls += " locked";
-    } else if (answers[current] === i) {
-      cls += " selected";
-    }
+    const sel = answers[current] === i ? " selected" : "";
     const mark = ["A","B","C","D"][i];
-    return `<button class="${cls}" onclick="choose(${i})">
+    return `<button class="opt${sel}" onclick="choose(${i})">
               <span class="mk">${mark}</span><span>${opt}</span>
             </button>`;
   }).join("");
 
-  let feedbackHTML = "";
-  if (revealed) {
-    const ok = answers[current] === q.answer;
-    feedbackHTML =
-      `<div class="feedback ${ok ? "ok" : "no"}">` +
-        (ok ? `✅ 정답이에요!${combo >= 2 ? ` 🔥 ${combo}연속!` : ""}`
-            : `❌ 아쉬워요. 정답은 ${["A","B","C","D"][q.answer]}. ${q.options[q.answer]}`) +
-      `</div><div class="exp-inline">📝 ${q.exp}</div>`;
-  }
-
-  const comboBadge = (practiceMode && !revealed && combo >= 2) ? `<span class="combo">🔥 ${combo}연속</span>` : "";
-
   $("questionArea").innerHTML = `
-    <span class="qtag">제 ${current + 1} 문제</span>${comboBadge}
+    <span class="qtag">제 ${current + 1} 문제</span>
     <div class="dialogue">${dialogueHTML}</div>
     <div class="qtext">${q.q}</div>
     <div class="options">${optsHTML}</div>
-    ${feedbackHTML}
   `;
 
   $("countLabel").textContent = (current + 1) + " / " + QUESTIONS.length;
@@ -1076,22 +1051,10 @@ function render() {
 }
 
 function choose(i) {
-  if (practiceMode && answers[current] !== null) return;   // 연습모드: 답한 문제는 잠금
-
   if (answers[current] === null) answerTimeMs[current] = Date.now() - qStartTime;  // 첫 응답 시간
   answers[current] = i;
   const isCorrect = i === QUESTIONS[current].answer;
-
-  if (practiceMode) {
-    if (isCorrect) { combo++; bestCombo = Math.max(bestCombo, combo); }
-    else combo = 0;
-    playSound(isCorrect ? "correct" : "wrong");
-    render();                        // 즉시 채점 표시(자동 넘김 없이 해설 읽기)
-    return;
-  }
-
-  // 시험모드: 콤보는 내부 집계(표시는 안 함) + 중립 소리 + 자동 넘김
-  if (isCorrect) { combo++; bestCombo = Math.max(bestCombo, combo); } else combo = 0;
+  if (isCorrect) { combo++; bestCombo = Math.max(bestCombo, combo); } else combo = 0;  // 콤보 내부 집계
   playSound("click");
   render();
   clearAdvance();
@@ -1191,8 +1154,9 @@ function doSubmit() {
   const wrongBtn = lastWrong.length
     ? `<button class="btn ghost" onclick="retryWrong()">❌ 틀린 문제만 다시 풀기 (${lastWrong.length})</button>` : "";
   const newRecordHTML = newRecord ? `<div class="newrecord">🎉 내 최고 기록 경신!</div>` : "";
+  const comboNote = bestCombo >= 2 ? `<div class="combo-note">🔥 이번 최고 ${bestCombo}연속!</div>` : "";
   const rankBtn = (RANK_ON() && currentRoundRanked)
-    ? `<button class="btn ocean" onclick="openRank('result')">🏆 전체 랭킹 보기</button>` : "";
+    ? `<button class="btn ocean" onclick="openRank('result')">${currentRoom ? "🏆 우리 반 랭킹 보기" : "🏆 전체 랭킹 보기"}</button>` : "";
 
   $("quizScreen").classList.add("hidden");
   const rs = $("resultScreen");
@@ -1209,6 +1173,7 @@ function doSubmit() {
       </div>
       <div class="grade">${grade}</div>
       ${newRecordHTML}
+      ${comboNote}
     </div>
 
     <div class="stat-row">
@@ -1217,6 +1182,7 @@ function doSubmit() {
       <div class="stat"><div class="v">⏱ ${fmtTime(elapsed)}</div><div class="l">걸린 시간</div></div>
     </div>
 
+    <div class="standing" id="standing"></div>
     <div class="rank-status" id="rankStatus"></div>
 
     <div class="result-actions">
@@ -1233,12 +1199,32 @@ function doSubmit() {
 
   if (pct >= 80) { playSound("fanfare"); runConfetti(); }
 
-  // 전체 랭킹에 점수 등록(전체 세트 라운드 + 설정된 경우)
+  // 랭킹에 점수 등록(전체 세트 라운드 + 설정된 경우)
   if (RANK_ON() && currentRoundRanked) {
     setRankStatus("⏳ 순위 등록 중…");
-    submitScore(userName, totalScore, pct, Math.round(elapsed / 1000))
-      .then(ok => setRankStatus(ok ? "✅ 전체 랭킹에 등록됐어요!" : "⚠️ 순위 등록 실패 — 인터넷을 확인해 주세요."));
+    submitScore(userName, totalScore, pct, Math.round(elapsed / 1000)).then(ok => {
+      setRankStatus(ok ? (currentRoom ? "✅ 우리 반 랭킹에 등록됐어요!" : "✅ 전체 랭킹에 등록됐어요!")
+                       : "⚠️ 순위 등록 실패 — 인터넷을 확인해 주세요.");
+      if (ok) showStanding(totalScore);   // 우리 반 등수 표시
+    });
   }
+}
+
+/* 우리 반에서 몇 등인지 계산해 표시(방에 있을 때만) */
+async function showStanding(myScore) {
+  if (!RANK_ON() || !currentRoom) return;
+  try {
+    const res = await fetch(
+      SUPABASE_URL + "/rest/v1/scores?room=eq." + encodeURIComponent(currentRoom.code) + "&select=score",
+      { headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY } }
+    );
+    const rows = await res.json();
+    if (!Array.isArray(rows) || !rows.length) return;
+    const total = rows.length;
+    const rank = rows.filter(r => r.score > myScore).length + 1;
+    const el = $("standing");
+    if (el) el.innerHTML = `🏫 우리 반에서 <b>${rank}등</b> / ${total}명!`;
+  } catch (e) {}
 }
 
 /* ---------------- 효과음 (Web Audio) ---------------- */
@@ -1444,13 +1430,15 @@ function renderRoomBanner() {
   }
 }
 
-/* 시작 화면 버튼/배너 상태 갱신 */
+/* 시작 화면 상태 갱신: 방 있으면(학생) 퀴즈 영역, 없으면(선생님) 방 만들기 영역 */
 function refreshStartButtons() {
-  const on = RANK_ON();
-  $("startRankBtn").classList.toggle("hidden", !on);
-  $("startRankBtn").textContent = currentRoom ? "🏆 우리 반 랭킹 보기" : "🏆 전체 랭킹 보기";
-  $("makeRoomBtn").classList.toggle("hidden", !on || Boolean(currentRoom));  // 방 안에서는 만들기 숨김
   renderRoomBanner();
+  const inRoom = Boolean(currentRoom);
+  const teacherMode = !inRoom && RANK_ON();   // 방 없이 접속 + 백엔드 있음 → 선생님(방 만들기 전용)
+  $("teacherArea").classList.toggle("hidden", !teacherMode);
+  $("playArea").classList.toggle("hidden", teacherMode);
+  $("startRankBtn").textContent = inRoom ? "🏆 우리 반 랭킹 보기" : "🏆 전체 랭킹 보기";
+  $("startRankBtn").classList.toggle("hidden", !RANK_ON());
 }
 
 /* --- 방 만들기 화면 --- */

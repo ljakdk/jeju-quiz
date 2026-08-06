@@ -1,5 +1,3 @@
-const SUPABASE_URL = "https://zxdxdqsutsvnbplqaefx.supabase.co/rest/v1";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp4ZHhkcXN1dHN2bmJwbHFhZWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5NjQyMTQsImV4cCI6MjEwMTU0MDIxNH0.Xv5l9F8696UYIxmcNltJwDtz_VS9aBp2hYfEvhjl33U";
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>제주 방언 퀴즈 🍊</title>
@@ -278,6 +276,67 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
   .stat .v { font-weight: 900; font-size: 19px; color: var(--navy); }
   .stat .l { font-size: 12px; color: var(--gray); margin-top: 3px; }
 
+  /* ---------- 내 최고 기록 ---------- */
+  .best-badge {
+    margin-top: 16px; padding: 12px 16px; border-radius: 14px;
+    background: linear-gradient(135deg, #fff6ec, #eefaf8); border: 1px solid #f2e3d3;
+    font-size: 14px; font-weight: 700; color: var(--navy); text-align: center; word-break: keep-all;
+  }
+  .best-badge .hl2 { color: var(--orange-dark); }
+  .newrecord { margin: 14px 0 2px; text-align: center; font-weight: 800; color: var(--orange-dark); font-size: 16px; animation: pop .3s ease; }
+
+  /* ---------- 랭킹 ---------- */
+  .rank-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+  .rank-title { font-size: 22px; color: var(--navy); letter-spacing: -.5px; }
+  .rank-sub { color: var(--gray); font-size: 14px; margin-top: 4px; }
+  .rank-refresh { width: auto !important; margin-top: 0 !important; padding: 10px 14px !important; font-size: 14px !important; white-space: nowrap; }
+  .rank-list { min-height: 120px; }
+  .rank-empty { text-align: center; color: var(--gray); padding: 36px 10px; line-height: 1.7; font-size: 15px; }
+  .rank-row {
+    display: flex; align-items: center; gap: 12px;
+    border: 1px solid var(--line); border-radius: 12px; padding: 11px 14px; margin-bottom: 10px; background: #fff;
+  }
+  .rank-row.me { border-color: var(--orange); background: #fff6ec; }
+  .rank-no { font-weight: 900; font-size: 15px; color: var(--gray); width: 30px; text-align: center; flex: none; }
+  .rank-row.top1 .rank-no, .rank-row.top2 .rank-no, .rank-row.top3 .rank-no { color: var(--orange-dark); }
+  .rank-name { font-weight: 800; color: var(--navy); flex: 1; word-break: break-all; }
+  .rank-score { font-weight: 800; color: var(--orange-dark); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .rank-meta { font-size: 12px; color: var(--gray); white-space: nowrap; }
+  .rank-status { font-size: 13px; font-weight: 700; color: var(--ocean-dark); text-align: center; margin-top: 8px; word-break: keep-all; }
+  .rank-status:empty { display: none; }
+  .rank-status.warn { color: var(--red); }
+
+  /* ---------- 학급 방 ---------- */
+  .room-banner {
+    margin-top: 16px; padding: 12px 16px; border-radius: 14px;
+    background: #eafaf7; border: 1px solid #bfe9e2; color: var(--ocean-dark);
+    font-size: 14.5px; font-weight: 700; text-align: center; word-break: keep-all;
+  }
+  .room-banner .room-code { margin-left: 6px; color: var(--orange-dark); font-variant-numeric: tabular-nums; letter-spacing: 1px; }
+  .room-field { margin-top: 16px; text-align: left; }
+  .room-field label { font-weight: 700; font-size: 14.5px; color: var(--navy); display: block; margin-bottom: 8px; }
+  .room-field .opt-tag { font-weight: 600; font-size: 12px; color: var(--gray); }
+  .room-field input {
+    width: 100%; padding: 13px 15px; font-size: 15px; font-family: inherit;
+    border: 2px solid var(--line); border-radius: 12px; outline: none; transition: border .2s;
+  }
+  .room-field input:focus { border-color: var(--ocean); }
+  .room-made { text-align: center; font-size: 16px; font-weight: 800; color: var(--green); margin: 4px 0 6px; }
+  .room-code-big { text-align: center; font-size: 34px; font-weight: 900; color: var(--navy); letter-spacing: 3px; margin: 6px 0 14px; font-variant-numeric: tabular-nums; }
+  .room-qr { display: block; margin: 0 auto 14px; border-radius: 12px; background: #fff; width: 220px; height: 220px; max-width: 100%; }
+  .room-link-box { display: flex; gap: 8px; }
+  .room-link-box input {
+    flex: 1; min-width: 0; padding: 12px 14px; font-size: 13px; border: 2px solid var(--line);
+    border-radius: 12px; font-family: inherit; color: var(--ink); background: #fafafa;
+  }
+  .room-link-box .btn { width: auto; margin-top: 0; padding: 12px 16px; font-size: 14px; white-space: nowrap; }
+  .room-reset-btn { width: auto !important; margin: 14px auto 0 !important; display: block; padding: 10px 16px !important; font-size: 13px !important; }
+  .modal .reset-input {
+    width: 100%; margin-top: 14px; padding: 12px 14px; font-size: 15px; text-align: center;
+    border: 2px solid var(--line); border-radius: 12px; font-family: inherit; outline: none;
+  }
+  .modal .reset-input:focus { border-color: var(--ocean); }
+
   /* ---------- 컨페티 ---------- */
   .confetti-canvas { position: fixed; inset: 0; z-index: 1500; pointer-events: none; }
   .confetti-canvas.hidden { display: none; }
@@ -321,6 +380,20 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
     </div>
   </div>
 
+  <!-- 점수 초기화 모달(선생님) -->
+  <div id="resetModal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="m-emoji">🧹</div>
+      <p>이 방의 점수를 모두 지울까요?<br>선생님 비밀번호를 입력하세요.</p>
+      <input id="resetPw" type="text" class="reset-input" placeholder="방 비밀번호" autocomplete="off">
+      <div class="rank-status" id="resetStatus"></div>
+      <div class="modal-btns">
+        <button class="btn ghost" onclick="closeResetModal()">취소</button>
+        <button class="btn" onclick="doResetRoom()">점수 초기화</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 시작 화면 -->
   <div id="startScreen" class="card">
     <div class="hero">
@@ -329,6 +402,8 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
       <div class="sub">혼저 옵서예! (어서 오세요!)</div>
       <p class="desc">제주 사람들의 정겨운 사투리, 얼마나 알고 있나 마씀?<br>짧은 대화를 읽고 알맞은 뜻을 골라보세요. 한 세트에 20문제, 총 40문제!</p>
     </div>
+    <div class="room-banner hidden" id="roomBanner"></div>
+    <div class="best-badge hidden" id="bestBadge"></div>
     <div class="name-box">
       <label for="nameInput">이름을 입력해 주세요</label>
       <input type="text" id="nameInput" placeholder="예) 김제주" maxlength="20" autocomplete="off">
@@ -343,6 +418,42 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
       <div class="mode-desc" id="modeDesc">시험 모드: 20문제를 끝까지 푼 뒤 점수와 해설을 확인해요.</div>
     </div>
     <button class="btn" onclick="startQuiz()">퀴즈 시작하기 🚀</button>
+    <button class="btn ghost hidden" id="startRankBtn" onclick="openRank('start')" style="margin-top:12px">🏆 전체 랭킹 보기</button>
+    <button class="btn ghost hidden" id="makeRoomBtn" onclick="openRoomCreate()" style="margin-top:12px">🏫 학급 방 만들기 (선생님)</button>
+  </div>
+
+  <!-- 학급 방 만들기 화면 -->
+  <div id="roomScreen" class="card hidden">
+    <h2 class="rank-title">🏫 학급 방 만들기</h2>
+    <div class="rank-sub">방을 만들고 링크·QR을 학생들에게 공유하세요.</div>
+    <div id="roomForm">
+      <div class="room-field">
+        <label for="roomName">학급 이름</label>
+        <input id="roomName" type="text" placeholder="예) 3학년 2반" maxlength="30" autocomplete="off">
+      </div>
+      <div class="room-field">
+        <label for="roomPw">비밀번호 <span class="opt-tag">(선생님 관리용 · 점수 초기화에 필요)</span></label>
+        <input id="roomPw" type="text" placeholder="기억하기 쉬운 비밀번호" maxlength="30" autocomplete="off">
+      </div>
+      <div class="rank-status" id="roomStatus"></div>
+      <button class="btn ocean" onclick="doCreateRoom()" style="margin-top:8px">방 만들기</button>
+      <button class="btn ghost" onclick="closeRoom()" style="margin-top:10px">← 돌아가기</button>
+    </div>
+    <div id="roomResult" class="hidden"></div>
+  </div>
+
+  <!-- 랭킹 화면 -->
+  <div id="rankScreen" class="card hidden">
+    <div class="rank-head">
+      <div>
+        <h2 class="rank-title" id="rankTitle">🏆 전체 랭킹</h2>
+        <div class="rank-sub" id="rankSub">링크로 접속한 모두의 점수 순위예요</div>
+      </div>
+      <button class="btn ghost rank-refresh" onclick="loadLeaderboard()">🔄 새로고침</button>
+    </div>
+    <div id="rankList" class="rank-list"></div>
+    <button class="btn ghost room-reset-btn hidden" id="rankResetBtn" onclick="openResetModal()">🧹 우리 반 점수 초기화 (선생님)</button>
+    <button class="btn" onclick="closeRank()" style="margin-top:20px">← 돌아가기</button>
   </div>
 
   <!-- 퀴즈 화면 -->
@@ -379,6 +490,13 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 </div>
 
 <script>
+/* ===================== 전체 랭킹(리더보드) 설정 =====================
+   Supabase 프로젝트의 주소(URL)와 anon public 키를 아래에 붙여넣으세요.
+   두 값이 비어 있으면 랭킹 기능은 자동으로 숨겨지고 나머지는 그대로 작동합니다. */
+const SUPABASE_URL = "https://zxdxdqsutsvnbplqaefx.supabase.co";        // 예) https://abcd1234.supabase.co
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp4ZHhkcXN1dHN2bmJwbHFhZWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5NjQyMTQsImV4cCI6MjEwMTU0MDIxNH0.Xv5l9F8696UYIxmcNltJwDtz_VS9aBp2hYfEvhjl33U";   // anon public key
+const RANK_ON = () => Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+
 /* ---------------- 문제 데이터 (2세트 × 20문제) ----------------
    answer: 정답 보기 인덱스(0~3). 세트마다 정답 위치를 0~3에 고루 분산(각 5문제).
    보기들은 서로 비슷한 길이·형식으로 맞춰 정답이 티 나지 않게 구성. */
@@ -730,6 +848,10 @@ let lastShownIndex = -1;
 let combo = 0, bestCombo = 0;
 let startTime = 0, tickTimer = null;
 let lastWrong = [];          // 방금 라운드의 틀린 문제(복습용)
+let currentRoundRanked = true;  // 이번 라운드가 랭킹·최고기록 반영 대상인지(전체 세트만)
+let rankReturnTo = "start";     // 랭킹 화면에서 '돌아가기' 시 복귀할 화면
+let currentRoom = null;         // 현재 입장한 학급 방 {code, name} 또는 null
+let createdRoom = null;         // 방금 만든 방(임시)
 
 const $ = id => document.getElementById(id);
 
@@ -820,15 +942,16 @@ function retryRound() {
 /* '틀린 문제만 다시 풀기' */
 function retryWrong() {
   if (!lastWrong.length) return;
-  startRound(buildShuffled(lastWrong), "틀린 문제 복습");
+  startRound(buildShuffled(lastWrong), "틀린 문제 복습", false);
 }
 
-/* 주어진 문제 목록으로 라운드 시작 */
-function startRound(qs, label) {
+/* 주어진 문제 목록으로 라운드 시작 (ranked=false면 랭킹·최고기록 미반영) */
+function startRound(qs, label, ranked) {
   clearAdvance();
   stopTimer();
   QUESTIONS = qs;
   roundLabel = label;
+  currentRoundRanked = ranked !== false;
   answers = new Array(QUESTIONS.length).fill(null);
   answerTimeMs = new Array(QUESTIONS.length).fill(null);
   current = 0;
@@ -837,6 +960,7 @@ function startRound(qs, label) {
   updateWhoLabel();
   $("startScreen").classList.add("hidden");
   $("resultScreen").classList.add("hidden");
+  $("rankScreen").classList.add("hidden");
   $("quizScreen").classList.remove("hidden");
   $("homeBtn").classList.remove("hidden");
   startTimer();
@@ -868,8 +992,11 @@ function doHome() {
   $("confirmModal").classList.add("hidden");
   $("quizScreen").classList.add("hidden");
   $("resultScreen").classList.add("hidden");
+  $("rankScreen").classList.add("hidden");
   $("startScreen").classList.remove("hidden");
   $("homeBtn").classList.add("hidden");
+  renderBestBadge();
+  refreshStartButtons();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -963,7 +1090,8 @@ function choose(i) {
     return;
   }
 
-  // 시험모드: 중립 소리 + 자동 넘김
+  // 시험모드: 콤보는 내부 집계(표시는 안 함) + 중립 소리 + 자동 넘김
+  if (isCorrect) { combo++; bestCombo = Math.max(bestCombo, combo); } else combo = 0;
   playSound("click");
   render();
   clearAdvance();
@@ -1020,6 +1148,18 @@ function doSubmit() {
   const pct = Math.round(correct / total * 100);
   const totalScore = correct * 10 + speedBonus;
 
+  // 내 최고 기록(이 기기) 갱신 — 전체 세트 라운드만
+  let newRecord = false;
+  if (currentRoundRanked) {
+    const b = getBest();
+    if (!b || totalScore > b.score) {
+      newRecord = true;
+      saveBest({ score: totalScore, pct: pct, combo: bestCombo });
+    } else if (bestCombo > (b.combo || 0)) {
+      saveBest({ score: b.score, pct: b.pct, combo: bestCombo });
+    }
+  }
+
   let grade, emoji;
   if (pct === 100)      { grade = "제주 토박이 인정! 🏆"; emoji = "🏆"; }
   else if (pct >= 80)   { grade = "제주 방언 고수우다! 🍊"; emoji = "🌟"; }
@@ -1050,6 +1190,9 @@ function doSubmit() {
   const nextSetNo = (bankIndex + 1) % QUESTION_BANKS.length + 1;
   const wrongBtn = lastWrong.length
     ? `<button class="btn ghost" onclick="retryWrong()">❌ 틀린 문제만 다시 풀기 (${lastWrong.length})</button>` : "";
+  const newRecordHTML = newRecord ? `<div class="newrecord">🎉 내 최고 기록 경신!</div>` : "";
+  const rankBtn = (RANK_ON() && currentRoundRanked)
+    ? `<button class="btn ocean" onclick="openRank('result')">🏆 전체 랭킹 보기</button>` : "";
 
   $("quizScreen").classList.add("hidden");
   const rs = $("resultScreen");
@@ -1065,6 +1208,7 @@ function doSubmit() {
         </div>
       </div>
       <div class="grade">${grade}</div>
+      ${newRecordHTML}
     </div>
 
     <div class="stat-row">
@@ -1073,8 +1217,11 @@ function doSubmit() {
       <div class="stat"><div class="v">⏱ ${fmtTime(elapsed)}</div><div class="l">걸린 시간</div></div>
     </div>
 
+    <div class="rank-status" id="rankStatus"></div>
+
     <div class="result-actions">
       <button class="btn ocean" onclick="nextRound()">🔁 다른 문제 더 풀기 (세트 ${nextSetNo})</button>
+      ${rankBtn}
       ${wrongBtn}
       <button class="btn ghost" onclick="retryRound()">↺ 이 세트 다시 풀기</button>
     </div>
@@ -1085,6 +1232,13 @@ function doSubmit() {
   window.scrollTo({ top: 0, behavior: "smooth" });
 
   if (pct >= 80) { playSound("fanfare"); runConfetti(); }
+
+  // 전체 랭킹에 점수 등록(전체 세트 라운드 + 설정된 경우)
+  if (RANK_ON() && currentRoundRanked) {
+    setRankStatus("⏳ 순위 등록 중…");
+    submitScore(userName, totalScore, pct, Math.round(elapsed / 1000))
+      .then(ok => setRankStatus(ok ? "✅ 전체 랭킹에 등록됐어요!" : "⚠️ 순위 등록 실패 — 인터넷을 확인해 주세요."));
+  }
 }
 
 /* ---------------- 효과음 (Web Audio) ---------------- */
@@ -1149,4 +1303,260 @@ function runConfetti() {
   }
   requestAnimationFrame(step);
 }
+
+/* ---------------- 내 최고 기록(이 기기) ---------------- */
+function getBest() {
+  try { return JSON.parse(localStorage.getItem("jejuBest") || "null"); } catch (e) { return null; }
+}
+function saveBest(obj) {
+  try { localStorage.setItem("jejuBest", JSON.stringify(obj)); } catch (e) {}
+}
+function renderBestBadge() {
+  const el = $("bestBadge");
+  if (!el) return;
+  const b = getBest();
+  if (b) {
+    el.classList.remove("hidden");
+    const comboPart = b.combo ? ` · 🔥 최고 ${b.combo}연속` : "";
+    el.innerHTML = `🏅 내 최고 기록 · <span class="hl2">🏆 ${b.score}점</span> · 정확도 ${b.pct}%${comboPart}`;
+  } else {
+    el.classList.add("hidden");
+  }
+}
+
+/* ---------------- 전체 랭킹(Supabase) ---------------- */
+function setRankStatus(msg) { const el = $("rankStatus"); if (el) el.textContent = msg; }
+
+function submitScore(name, score, pct, secs) {
+  if (!RANK_ON()) return Promise.resolve(false);
+  return fetch(SUPABASE_URL + "/rest/v1/scores", {
+    method: "POST",
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: "Bearer " + SUPABASE_ANON_KEY,
+      "Content-Type": "application/json",
+      Prefer: "return=minimal"
+    },
+    body: JSON.stringify({ name: name, score: score, pct: pct, secs: secs, room: currentRoom ? currentRoom.code : null })
+  }).then(r => r.ok).catch(() => false);
+}
+
+function openRank(from) {
+  rankReturnTo = from || "start";
+  $("rankTitle").textContent = currentRoom ? ("🏆 " + currentRoom.name + " 랭킹") : "🏆 전체 랭킹";
+  $("rankSub").textContent = currentRoom ? "우리 반 학생들의 점수 순위예요" : "링크로 접속한 모두의 점수 순위예요";
+  $("rankResetBtn").classList.toggle("hidden", !currentRoom);   // 방일 때만 초기화 버튼(선생님)
+  ["startScreen", "quizScreen", "resultScreen"].forEach(id => $(id).classList.add("hidden"));
+  $("rankScreen").classList.remove("hidden");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  loadLeaderboard();
+}
+function closeRank() {
+  $("rankScreen").classList.add("hidden");
+  $(rankReturnTo === "result" ? "resultScreen" : "startScreen").classList.remove("hidden");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+async function loadLeaderboard() {
+  const list = $("rankList");
+  if (!RANK_ON()) {
+    list.innerHTML = `<div class="rank-empty">아직 랭킹이 설정되지 않았어요.<br>선생님이 Supabase를 연결하면 여기에 순위가 나타납니다.</div>`;
+    return;
+  }
+  list.innerHTML = `<div class="rank-empty">⏳ 랭킹을 불러오는 중…</div>`;
+  const filter = currentRoom ? ("room=eq." + encodeURIComponent(currentRoom.code)) : "room=is.null";
+  try {
+    const res = await fetch(
+      SUPABASE_URL + "/rest/v1/scores?" + filter + "&select=name,score,pct,secs&order=score.desc,secs.asc&limit=50",
+      { headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY } }
+    );
+    if (!res.ok) throw new Error("http " + res.status);
+    renderRank(await res.json());
+  } catch (e) {
+    list.innerHTML = `<div class="rank-empty">⚠️ 랭킹을 불러오지 못했어요.<br>인터넷 연결과 Supabase 설정을 확인해 주세요.</div>`;
+  }
+}
+
+function renderRank(rows) {
+  const list = $("rankList");
+  if (!Array.isArray(rows) || !rows.length) {
+    list.innerHTML = `<div class="rank-empty">아직 등록된 점수가 없어요. 첫 주인공이 되어 보세요! 🍊</div>`;
+    return;
+  }
+  let meShown = false;
+  list.innerHTML = rows.map((r, i) => {
+    const rank = i + 1;
+    const isMe = !meShown && userName && r.name === userName;
+    if (isMe) meShown = true;
+    const medal = rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : rank;
+    return `
+      <div class="rank-row ${isMe ? "me" : ""} ${rank <= 3 ? "top" + rank : ""}">
+        <span class="rank-no">${medal}</span>
+        <span class="rank-name">${esc(r.name)}${isMe ? " (나)" : ""}</span>
+        <span class="rank-score">🏆 ${r.score}</span>
+        <span class="rank-meta">${r.pct}% · ${fmtTime((r.secs || 0) * 1000)}</span>
+      </div>`;
+  }).join("");
+}
+
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"]/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[m]));
+}
+
+/* ---------------- 학급 방 ---------------- */
+/* Supabase RPC(저장 프로시저) 호출 */
+function rpc(fn, params) {
+  return fetch(SUPABASE_URL + "/rest/v1/rpc/" + fn, {
+    method: "POST",
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: "Bearer " + SUPABASE_ANON_KEY,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(params)
+  }).then(r => r.ok ? r.json() : Promise.reject(r.status));
+}
+
+function getRoomFromURL() {
+  try { return new URLSearchParams(location.search).get("room"); } catch (e) { return null; }
+}
+function roomLink(code) { return location.origin + location.pathname + "?room=" + encodeURIComponent(code); }
+
+/* 링크로 들어온 방 감지 → 이름 조회 후 입장 */
+async function detectRoom() {
+  const code = getRoomFromURL();
+  if (!code || !RANK_ON()) return;
+  try {
+    const name = await rpc("get_room_name", { p_code: code });
+    if (name) currentRoom = { code: code.toUpperCase(), name: name };
+  } catch (e) {}
+  refreshStartButtons();
+}
+
+function renderRoomBanner() {
+  const el = $("roomBanner");
+  if (!el) return;
+  if (currentRoom) {
+    el.classList.remove("hidden");
+    el.innerHTML = `🏫 <b>${esc(currentRoom.name)}</b> 방에 입장했어요 <span class="room-code">${esc(currentRoom.code)}</span>`;
+  } else {
+    el.classList.add("hidden");
+  }
+}
+
+/* 시작 화면 버튼/배너 상태 갱신 */
+function refreshStartButtons() {
+  const on = RANK_ON();
+  $("startRankBtn").classList.toggle("hidden", !on);
+  $("startRankBtn").textContent = currentRoom ? "🏆 우리 반 랭킹 보기" : "🏆 전체 랭킹 보기";
+  $("makeRoomBtn").classList.toggle("hidden", !on || Boolean(currentRoom));  // 방 안에서는 만들기 숨김
+  renderRoomBanner();
+}
+
+/* --- 방 만들기 화면 --- */
+function openRoomCreate() {
+  createdRoom = null;
+  $("roomName").value = "";
+  $("roomPw").value = "";
+  setRoomStatus("", "");
+  $("roomForm").classList.remove("hidden");
+  $("roomResult").classList.add("hidden");
+  $("roomResult").innerHTML = "";
+  ["startScreen", "quizScreen", "resultScreen", "rankScreen"].forEach(id => $(id).classList.add("hidden"));
+  $("roomScreen").classList.remove("hidden");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+function closeRoom() {
+  $("roomScreen").classList.add("hidden");
+  $("startScreen").classList.remove("hidden");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+function setRoomStatus(msg, kind) {
+  const el = $("roomStatus");
+  if (el) { el.textContent = msg; el.className = "rank-status " + (kind || ""); }
+}
+
+async function doCreateRoom() {
+  const name = $("roomName").value.trim();
+  const pw = $("roomPw").value.trim();
+  if (!name || !pw) { setRoomStatus("학급 이름과 비밀번호를 모두 입력하세요.", "warn"); return; }
+  setRoomStatus("⏳ 방 만드는 중…", "");
+  try {
+    const code = await rpc("create_room", { p_name: name, p_password: pw });
+    createdRoom = { code: String(code).toUpperCase(), name: name };
+    showRoomResult(createdRoom.code, name);
+  } catch (e) {
+    setRoomStatus("⚠️ 방 만들기 실패 — 인터넷과 Supabase 설정(SQL)을 확인하세요.", "warn");
+  }
+}
+
+function showRoomResult(code, name) {
+  const link = roomLink(code);
+  const qr = "https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=" + encodeURIComponent(link);
+  $("roomForm").classList.add("hidden");
+  const rr = $("roomResult");
+  rr.classList.remove("hidden");
+  rr.innerHTML = `
+    <div class="room-made">✅ <b>${esc(name)}</b> 방이 만들어졌어요!</div>
+    <div class="room-code-big">${esc(code)}</div>
+    <img class="room-qr" src="${qr}" alt="방 입장 QR 코드">
+    <div class="room-link-box">
+      <input id="roomLinkInput" type="text" readonly value="${esc(link)}">
+      <button class="btn ghost" onclick="copyRoomLink()">복사</button>
+    </div>
+    <div class="rank-status" id="roomShareHint">이 링크나 QR을 학생들에게 공유하세요. 비밀번호는 점수 초기화 때 필요하니 기억해 두세요.</div>
+    <button class="btn ocean" onclick="enterCreatedRoom()" style="margin-top:14px">이 방으로 입장</button>
+    <button class="btn ghost" onclick="doHome()" style="margin-top:10px">처음으로</button>
+  `;
+}
+
+async function copyRoomLink() {
+  const val = $("roomLinkInput").value;
+  try { await navigator.clipboard.writeText(val); $("roomShareHint").textContent = "✅ 링크를 복사했어요! 학생들에게 붙여넣어 공유하세요."; }
+  catch (e) { $("roomLinkInput").select(); document.execCommand && document.execCommand("copy"); }
+}
+
+/* 만든 방으로 입장(선생님 확인용) — 주소창에도 방 정보 반영 */
+function enterCreatedRoom() {
+  if (!createdRoom) return;
+  currentRoom = createdRoom;
+  try { history.replaceState(null, "", roomLink(currentRoom.code)); } catch (e) {}
+  $("roomScreen").classList.add("hidden");
+  $("startScreen").classList.remove("hidden");
+  refreshStartButtons();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+/* --- 점수 초기화(선생님) --- */
+function openResetModal() {
+  $("resetPw").value = "";
+  setResetStatus("", "");
+  $("resetModal").classList.remove("hidden");
+}
+function closeResetModal() { $("resetModal").classList.add("hidden"); }
+function setResetStatus(msg, kind) {
+  const el = $("resetStatus");
+  if (el) { el.textContent = msg; el.className = "rank-status " + (kind || ""); }
+}
+async function doResetRoom() {
+  if (!currentRoom) return;
+  const pw = $("resetPw").value.trim();
+  if (!pw) { setResetStatus("비밀번호를 입력하세요.", "warn"); return; }
+  setResetStatus("⏳ 처리 중…", "");
+  try {
+    const n = await rpc("reset_room", { p_code: currentRoom.code, p_password: pw });
+    if (n === -1) { setResetStatus("비밀번호가 틀렸어요.", "warn"); return; }
+    closeResetModal();
+    loadLeaderboard();
+  } catch (e) {
+    setResetStatus("실패했어요. 잠시 후 다시 시도해 주세요.", "warn");
+  }
+}
+
+/* ---------------- 초기화 ---------------- */
+(function init() {
+  renderBestBadge();
+  refreshStartButtons();
+  detectRoom();   // 링크(?room=코드)로 들어왔으면 방 입장
+})();
 </script>

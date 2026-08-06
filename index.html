@@ -312,6 +312,14 @@
   .rank-status:empty { display: none; }
   .rank-status.warn { color: var(--red); }
 
+  /* ---------- 세트 탭(랭킹) ---------- */
+  .set-tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+  .set-tab {
+    flex: 1; padding: 10px; border-radius: 10px; border: 2px solid var(--line);
+    background: #fff; color: var(--gray); font-weight: 800; font-size: 14px; cursor: pointer; font-family: inherit; transition: .15s;
+  }
+  .set-tab.active { border-color: var(--ocean); background: #eafaf7; color: var(--ocean-dark); }
+
   /* ---------- 학급 방 ---------- */
   .room-banner {
     margin-top: 16px; padding: 12px 16px; border-radius: 14px;
@@ -357,6 +365,14 @@
   .memo-post { border: 1px solid var(--line); border-left: 5px solid var(--ocean); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; background: #fff; }
   .memo-post-name { font-weight: 800; color: var(--navy); font-size: 14.5px; margin-bottom: 6px; }
   .memo-post-text { font-size: 14.5px; color: #444; line-height: 1.6; word-break: keep-all; white-space: pre-wrap; }
+  #learnWriteBox { margin-bottom: 16px; }
+  #learnWriteForm { margin-top: 10px; }
+  #learnWriteForm input, #learnWriteForm textarea {
+    width: 100%; padding: 12px 14px; font-size: 15px; font-family: inherit;
+    border: 2px solid var(--line); border-radius: 12px; outline: none; margin-bottom: 10px;
+  }
+  #learnWriteForm textarea { min-height: 72px; resize: vertical; line-height: 1.6; }
+  #learnWriteForm input:focus, #learnWriteForm textarea:focus { border-color: var(--ocean); }
 
   /* ---------- 컨페티 ---------- */
   .confetti-canvas { position: fixed; inset: 0; z-index: 1500; pointer-events: none; }
@@ -474,6 +490,10 @@
       </div>
       <button class="btn ghost rank-refresh" onclick="loadLeaderboard()">🔄 새로고침</button>
     </div>
+    <div class="set-tabs" id="setTabs">
+      <button class="set-tab" data-set="1" onclick="switchRankBank(1)">세트 1</button>
+      <button class="set-tab" data-set="2" onclick="switchRankBank(2)">세트 2</button>
+    </div>
     <div id="rankList" class="rank-list"></div>
     <button class="btn ghost room-reset-btn hidden" id="rankResetBtn" onclick="openResetModal()">🧹 우리 반 점수 초기화 (선생님)</button>
     <button class="btn" onclick="closeRank()" style="margin-top:20px">← 돌아가기</button>
@@ -487,6 +507,16 @@
         <div class="rank-sub">친구들이 오늘 배운 점을 함께 봐요</div>
       </div>
       <button class="btn ghost rank-refresh" onclick="loadReflections()">🔄 새로고침</button>
+    </div>
+    <div id="learnWriteBox">
+      <button class="btn ocean" id="learnWriteBtn" onclick="toggleLearnWrite()">✏️ 배운 점 남기기</button>
+      <div id="learnWriteForm" class="hidden">
+        <input id="learnName" type="text" placeholder="이름(실명)" maxlength="20" autocomplete="off">
+        <textarea id="learnText" placeholder="새롭게 알게 된 점을 적어 주세요." maxlength="300"></textarea>
+        <div class="rank-status" id="learnWriteStatus"></div>
+        <button class="btn ocean" onclick="submitLearnFromBoard()" style="margin-top:0">올리기</button>
+        <button class="btn ghost" onclick="toggleLearnWrite()" style="margin-top:10px">취소</button>
+      </div>
     </div>
     <div id="learnList" class="rank-list"></div>
     <button class="btn" onclick="closeLearn()" style="margin-top:20px">← 돌아가기</button>
@@ -885,6 +915,7 @@ let startTime = 0, tickTimer = null;
 let lastWrong = [];          // 방금 라운드의 틀린 문제(복습용)
 let currentRoundRanked = true;  // 이번 라운드가 랭킹·최고기록 반영 대상인지(전체 세트만)
 let rankReturnTo = "start";     // 랭킹 화면에서 '돌아가기' 시 복귀할 화면
+let rankBank = 1;               // 랭킹 화면에서 보고 있는 세트(1 또는 2)
 let currentRoom = null;         // 현재 입장한 학급 방 {code, name} 또는 null
 let createdRoom = null;         // 방금 만든 방(임시)
 let lastQrUrl = "";             // 방금 만든 방의 QR 이미지 주소(다운로드용)
@@ -1250,22 +1281,22 @@ function doSubmit() {
   // 랭킹에 점수 등록(전체 세트 라운드 + 설정된 경우)
   if (RANK_ON() && currentRoundRanked) {
     setRankStatus("⏳ 순위 등록 중…");
-    submitScore(userName, totalScore, pct, Math.round(elapsed / 1000)).then(attempt => {
+    submitScore(userName, totalScore, pct, Math.round(elapsed / 1000), bankIndex + 1).then(attempt => {
       const ok = attempt != null;
       const roundInfo = (ok && attempt >= 2) ? ` (${attempt}회차 기록으로 갱신)` : "";
       setRankStatus(ok ? ((currentRoom ? "✅ 우리 반 랭킹에 등록됐어요!" : "✅ 전체 랭킹에 등록됐어요!") + roundInfo)
                        : "⚠️ 순위 등록 실패 — 인터넷을 확인해 주세요.");
-      if (ok) showStanding(totalScore);   // 우리 반 등수 표시
+      if (ok) showStanding(totalScore, bankIndex + 1);   // 우리 반 등수(세트별)
     });
   }
 }
 
 /* 우리 반에서 몇 등인지 계산해 표시(방에 있을 때만) */
-async function showStanding(myScore) {
+async function showStanding(myScore, setno) {
   if (!RANK_ON() || !currentRoom) return;
   try {
     const res = await fetch(
-      SUPABASE_URL + "/rest/v1/scores?room=eq." + encodeURIComponent(currentRoom.code) + "&select=score",
+      SUPABASE_URL + "/rest/v1/scores?room=eq." + encodeURIComponent(currentRoom.code) + "&setno=eq." + setno + "&select=score",
       { headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY } }
     );
     const rows = await res.json();
@@ -1314,6 +1345,8 @@ async function submitReflection() {
 
 function openLearn(from) {
   learnReturnTo = from || "start";
+  $("learnWriteForm").classList.add("hidden");   // 쓰기 폼은 접힌 상태로 시작
+  $("learnWriteBtn").classList.remove("hidden");
   ["startScreen", "quizScreen", "resultScreen", "rankScreen"].forEach(id => $(id).classList.add("hidden"));
   $("learnScreen").classList.remove("hidden");
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1355,6 +1388,51 @@ function renderReflections(rows) {
       <div class="memo-post-name">🙋 ${esc(r.name)}</div>
       <div class="memo-post-text">${esc(r.text)}</div>
     </div>`).join("");
+}
+
+/* 게시판에서 바로 배운 점 쓰기 */
+function toggleLearnWrite() {
+  const f = $("learnWriteForm"), btn = $("learnWriteBtn");
+  if (f.classList.contains("hidden")) {
+    $("learnName").value = userName || "";
+    $("learnText").value = "";
+    setLearnWriteStatus("", "");
+    f.classList.remove("hidden");
+    btn.classList.add("hidden");
+  } else {
+    f.classList.add("hidden");
+    btn.classList.remove("hidden");
+  }
+}
+function setLearnWriteStatus(msg, kind) {
+  const el = $("learnWriteStatus");
+  if (el) { el.textContent = msg; el.className = "rank-status " + (kind || ""); }
+}
+function postReflection(name, text) {
+  return fetch(SUPABASE_URL + "/rest/v1/reflections", {
+    method: "POST",
+    headers: {
+      apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY,
+      "Content-Type": "application/json", Prefer: "return=minimal"
+    },
+    body: JSON.stringify({ room: currentRoom.code, name: name, text: text })
+  }).then(r => r.ok).catch(() => false);
+}
+async function submitLearnFromBoard() {
+  const name = $("learnName").value.trim();
+  const text = $("learnText").value.trim();
+  if (!name) { setLearnWriteStatus("이름을 입력해 주세요.", "warn"); return; }
+  if (!text) { setLearnWriteStatus("내용을 입력해 주세요.", "warn"); return; }
+  if (!RANK_ON() || !currentRoom) { setLearnWriteStatus("방에 입장한 상태에서만 올릴 수 있어요.", "warn"); return; }
+  setLearnWriteStatus("⏳ 올리는 중…", "");
+  const ok = await postReflection(name, text);
+  if (ok) {
+    if (!userName) userName = name;   // 이름 기억
+    toggleLearnWrite();               // 폼 닫기
+    loadReflections();                // 목록 새로고침
+  } else {
+    setLearnWriteStatus("⚠️ 올리기 실패 — 잠시 후 다시 시도해 주세요.", "warn");
+  }
 }
 
 /* ---------------- 효과음 (Web Audio) ---------------- */
@@ -1443,24 +1521,35 @@ function renderBestBadge() {
 /* ---------------- 전체 랭킹(Supabase) ---------------- */
 function setRankStatus(msg) { const el = $("rankStatus"); if (el) el.textContent = msg; }
 
-/* 같은 (방·이름)의 이전 점수는 지우고 최신 1개만 남기며, 회차(attempt)를 반환 */
-function submitScore(name, score, pct, secs) {
+/* 같은 (방·이름·세트)의 이전 점수는 지우고 최신 1개만 남기며, 회차(attempt)를 반환 */
+function submitScore(name, score, pct, secs, setno) {
   if (!RANK_ON()) return Promise.resolve(null);
   return rpc("submit_score", {
     p_room: currentRoom ? currentRoom.code : null,
-    p_name: name, p_score: score, p_pct: pct, p_secs: secs
+    p_name: name, p_score: score, p_pct: pct, p_secs: secs, p_set: setno
   }).then(attempt => (typeof attempt === "number" ? attempt : null)).catch(() => null);
 }
 
 function openRank(from) {
   rankReturnTo = from || "start";
+  rankBank = (from === "result") ? (bankIndex + 1) : (rankBank || 1);   // 결과에서 열면 방금 푼 세트
+  updateSetTabs();
   $("rankTitle").textContent = currentRoom ? ("🏆 " + currentRoom.name + " 랭킹") : "🏆 전체 랭킹";
-  $("rankSub").textContent = currentRoom ? "우리 반 학생들의 점수 순위예요" : "링크로 접속한 모두의 점수 순위예요";
+  $("rankSub").textContent = currentRoom ? "세트별로 순위가 따로 관리돼요" : "링크로 접속한 모두의 점수 순위예요";
   $("rankResetBtn").classList.toggle("hidden", !currentRoom);   // 방일 때만 초기화 버튼(선생님)
   ["startScreen", "quizScreen", "resultScreen", "learnScreen"].forEach(id => $(id).classList.add("hidden"));
   $("rankScreen").classList.remove("hidden");
   window.scrollTo({ top: 0, behavior: "smooth" });
   loadLeaderboard();
+}
+
+function switchRankBank(n) {
+  rankBank = n;
+  updateSetTabs();
+  loadLeaderboard();
+}
+function updateSetTabs() {
+  document.querySelectorAll("#setTabs .set-tab").forEach(b => b.classList.toggle("active", Number(b.dataset.set) === rankBank));
 }
 function closeRank() {
   $("rankScreen").classList.add("hidden");
@@ -1475,7 +1564,8 @@ async function loadLeaderboard() {
     return;
   }
   list.innerHTML = `<div class="rank-empty">⏳ 랭킹을 불러오는 중…</div>`;
-  const filter = currentRoom ? ("room=eq." + encodeURIComponent(currentRoom.code)) : "room=is.null";
+  const roomFilter = currentRoom ? ("room=eq." + encodeURIComponent(currentRoom.code)) : "room=is.null";
+  const filter = roomFilter + "&setno=eq." + rankBank;
   try {
     const res = await fetch(
       SUPABASE_URL + "/rest/v1/scores?" + filter + "&select=name,score,pct,secs,attempt&order=score.desc,secs.asc&limit=50",

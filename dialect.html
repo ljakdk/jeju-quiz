@@ -52,6 +52,7 @@
   :root[data-theme="dark"] .namewrap input{background:#1b212a;}
   .namewrap input:focus{border-color:var(--accent);}
   .rmbtns{display:flex;gap:10px;margin-top:14px;}.rmbtns .btn{margin-top:0;}
+  .namewarn{margin-top:8px;color:#e03131;font-weight:800;font-size:13.5px;text-align:center;}.namewarn.hidden{display:none;}
   .tmodal{position:fixed;inset:0;z-index:2000;background:rgba(20,25,30,.55);display:flex;align-items:center;justify-content:center;padding:20px;}
   .tmodal.hidden{display:none;}
   .tbox{background:var(--paper);border-radius:20px;padding:26px 22px;max-width:420px;width:100%;box-shadow:var(--shadow);position:relative;max-height:85vh;overflow:auto;}
@@ -141,7 +142,7 @@ const REGIONS = [
   { name:"경상도", emoji:"🌊", c:"#e03131", file:"gyeongsang.html", desc:"정구지·단디·억수로·개안타…" },
   { name:"전라도", emoji:"🌾", c:"#2f9e44", file:"jeolla.html", desc:"거시기·시방·겁나게·짠하다…" },
   { name:"충청도", emoji:"🏞️", c:"#3b5bdb", file:"chungcheong.html", desc:"겨·워디·을매·지둘러…" },
-  { name:"강원도", emoji:"⛰️", c:"#099268", file:"gangwon.html", desc:"마카·옥시기·감재·새첩다…" }
+  { name:"강원도", emoji:"⛰️", c:"#099268", file:"gangwon.html", desc:"마카·욥시기·감재·새첩다…" }
 ];
 
 /* ---- 방 상태 (URL ?room + localStorage) ---- */
@@ -240,6 +241,7 @@ function renderRegions(){
     '<a class="region" style="--c:'+r.c+'" href="'+r.file+roomQS()+'">'+
     '<div class="top"><span class="emoji">'+r.emoji+'</span><span class="name">'+r.name+'</span><span class="badge">30문제</span></div>'+
     '<div class="desc">'+r.desc+'</div><div class="go">풀러 가기 →</div></a>').join("");
+  if(currentRoom){ Array.prototype.forEach.call(document.getElementById("regionGrid").querySelectorAll(".region"),function(a){ a.addEventListener("click",function(e){ if(!getMyName()){ e.preventDefault(); var el=document.getElementById("myName"); if(el){ el.focus(); el.style.borderColor="#e03131"; } var w=document.getElementById("nameWarn"); if(w) w.classList.remove("hidden"); window.scrollTo({top:0,behavior:"smooth"}); } }); }); }
 }
 function renderRoomArea(){
   const a=$("roomArea");
@@ -247,11 +249,11 @@ function renderRoomArea(){
     const nm=getMyName();
     a.innerHTML='<div class="room-banner">🏫 <b>'+esc(currentRoom.name)+'</b> 방에 입장했어요 <span class="code">'+esc(currentRoom.code)+'</span>'+
       '<div class="namewrap"><label for="myName">이름(실명):</label><input id="myName" type="text" maxlength="20" placeholder="예) 김한글" value="'+esc(nm)+'"></div>'+
-      '<div class="sub">이름은 한 번만 입력하면 모든 지역에서 그대로 참여돼요.</div>'+
+      '<div class="namewarn hidden" id="nameWarn">⚠️ 이름을 입력해야 게임을 시작할 수 있어요!</div><div class="sub">이름을 한 번 입력하면 모든 지역에서 그대로 참여돼요.</div>'+
       '<div class="rmbtns"><button class="btn" id="totalBtn">🏅 나의 종합 결과</button><button class="btn" id="classRankBtn">🏆 학급 전체 랭킹</button></div>'+
       '<div class="rmbtns"><button class="btn alt2" id="boardBtn">📝 우리 반 소감</button><button class="btn ghost" id="leaveRoom">방 나가기</button></div>'+
       '<button class="btn ghost small" id="resetAllBtn">🧹 전체 초기화 (선생님)</button></div>';
-    $("myName").addEventListener("input",function(){ setMyName(this.value.trim()); });
+    $("myName").addEventListener("input",function(){ setMyName(this.value.trim()); this.style.borderColor=""; var w=$("nameWarn"); if(w) w.classList.add("hidden"); });
     $("totalBtn").onclick=showTotal;
     $("classRankBtn").onclick=showClassRank;
     $("boardBtn").onclick=showBoard;

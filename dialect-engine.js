@@ -48,10 +48,12 @@
   /* ---- 상태 ---- */
   var userName = "", QUESTIONS = [], current = 0, answers = [], answerTimeMs = [];
   var advanceTimer = null, combo = 0, bestCombo = 0, startTime = 0, tickTimer = null, lastWrong = [];
+  var comboBonus = 0, challengeMode = false, challengeTimer = null, challengeEndsAt = 0;
   var soundOn = true, lastShownIndex = -1, qStartTime = 0, rankReturnTo = "start", learnReturnTo = "start";
 
   /* ---------- 화면 구성 ---------- */
   function build() {
+    injectCSS();
     var nav = REGIONS.map(function (r) {
       var active = r.name === REGION ? " active" : "";
       return '<a class="dnav-link' + active + '" href="' + r.file + roomQS() + '">' + r.name + '</a>';
@@ -73,6 +75,8 @@
         '<button class="btn" id="startBtn">퀴즈 시작하기 🚀</button>' +
         '<button class="btn ghost hidden" id="startRankBtn">🏆 우리 반 랭킹 보기</button>' +
         '<button class="btn ghost hidden" id="startLearnBtn">📚 우리 반 배운 점 보기</button>' +
+        '<button class="btn ghost" id="startDexBtn">📖 방언 도감</button>' +
+        '<button class="btn alt" id="startChallengeBtn">⏱️ 도전 모드 · 60초 타임어택</button>' +
         '<div class="joinhint" id="joinHint"></div>' +
       '</div>' +
 
@@ -84,6 +88,7 @@
         '<div style="margin-top:12px"><button class="btn alt" id="submitBtn">결과 확인하기 ✅</button></div></div>' +
 
       '<div id="resultScreen" class="card hidden"></div>' +
+      '<div id="dexScreen" class="card hidden"></div>' +
 
       '<div id="rankScreen" class="card hidden">' +
         '<div class="rank-head"><div><h2 class="rank-title" id="rankTitle">🏆 우리 반 랭킹</h2><div class="rank-sub">' + esc(REGION) + ' 방언 순위</div></div>' +
@@ -120,6 +125,8 @@
     $("nameInput").addEventListener("keydown", function (e) { if (e.key === "Enter") startQuiz(); });
     $("startRankBtn").onclick = function () { openRank("start"); };
     $("startLearnBtn").onclick = function () { openLearn("start"); };
+    $("startDexBtn").onclick = openDex;
+    $("startChallengeBtn").onclick = startChallenge;
     $("rankRefresh").onclick = loadLeaderboard;
     $("rankBack").onclick = closeRank;
     $("rankResetBtn").onclick = openResetModal;
@@ -163,7 +170,7 @@
   function toggleSound() { soundOn = !soundOn; $("soundBtn").textContent = soundOn ? "🔊" : "🔇"; }
   var audioCtx = null;
   function tone(f, o, d, ty) { var t = audioCtx.currentTime + o, os = audioCtx.createOscillator(), g = audioCtx.createGain(); os.type = ty || "sine"; os.frequency.value = f; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.25, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + d); os.connect(g); g.connect(audioCtx.destination); os.start(t); os.stop(t + d + 0.02); }
-  function playSound(k) { if (!soundOn) return; try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === "suspended") audioCtx.resume(); if (k === "click") tone(520, 0, 0.05, "triangle"); else if (k === "fanfare")[523, 659, 784, 1047].forEach(function (f, i) { tone(f, i * 0.13, 0.2); }); } catch (e) {} }
+  function playSound(k) { if (!soundOn) return; try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === "suspended") audioCtx.resume(); if (k === "click") tone(520, 0, 0.05, "triangle"); else if (k === "correct") { tone(660, 0, 0.12); tone(880, 0.06, 0.12); } else if (k === "wrong") tone(160, 0, 0.22, "sawtooth"); else if (k === "combo") [523, 659, 784, 1047, 1319].forEach(function (f, i) { tone(f, i * 0.05, 0.12, "triangle"); }); else if (k === "timeup") { tone(392, 0, 0.25, "sawtooth"); tone(262, 0.18, 0.35, "sawtooth"); } else if (k === "fanfare")[523, 659, 784, 1047].forEach(function (f, i) { tone(f, i * 0.13, 0.2); }); } catch (e) {} }
 
   /* ---------- 셔플 ---------- */
   function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
@@ -198,11 +205,11 @@
   }
   function retryRound() { startRound(buildShuffled(BANK)); }
   function retryWrong() { if (lastWrong.length) startRound(buildShuffled(lastWrong)); }
-  function showOnly(id) { ["startScreen", "quizScreen", "resultScreen", "rankScreen", "learnScreen"].forEach(function (s) { $(s).classList.add("hidden"); }); $(id).classList.remove("hidden"); }
+  function showOnly(id) { ["startScreen", "quizScreen", "resultScreen", "rankScreen", "learnScreen", "dexScreen"].forEach(function (s) { $(s).classList.add("hidden"); }); $(id).classList.remove("hidden"); }
   function startRound(qs) {
     clearAdvance(); stopTimer();
     QUESTIONS = qs; answers = new Array(qs.length).fill(null); answerTimeMs = new Array(qs.length).fill(null);
-    current = 0; lastShownIndex = -1; combo = 0; bestCombo = 0;
+    current = 0; lastShownIndex = -1; combo = 0; bestCombo = 0; comboBonus = 0; challengeMode = false; $("quizScreen").classList.remove("challenge");
     $("whoLabel").textContent = "🙋 " + userName + (currentRoom ? " · " + currentRoom.name : "");
     showOnly("quizScreen"); startTimer(); buildNav(); render(); window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -216,13 +223,13 @@
     var oh = q.options.map(function (o, i) { return '<button class="opt' + (answers[current] === i ? " selected" : "") + '" data-i="' + i + '"><span class="mk">' + mk[i] + '</span><span>' + esc(o) + '</span></button>'; }).join("");
     $("questionArea").innerHTML = '<span class="qtag">제 ' + (current + 1) + ' 문제</span><div class="dialogue">' + dh + '</div><div class="qtext">' + esc(q.q) + '</div><div class="options">' + oh + '</div>';
     Array.prototype.forEach.call($("questionArea").querySelectorAll(".opt"), function (b) { b.onclick = function () { choose(+b.getAttribute("data-i")); }; });
-    $("countLabel").textContent = (current + 1) + " / " + QUESTIONS.length;
-    $("progressBar").style.width = ((current + 1) / QUESTIONS.length * 100) + "%";
+    if (!challengeMode) $("countLabel").textContent = (current + 1) + " / " + QUESTIONS.length;
+    if (!challengeMode) $("progressBar").style.width = ((current + 1) / QUESTIONS.length * 100) + "%";
     $("prevBtn").style.visibility = current === 0 ? "hidden" : "visible";
     $("nextBtn").style.visibility = current === QUESTIONS.length - 1 ? "hidden" : "visible";
     updateNav();
   }
-  function choose(i) { if (answers[current] === null) answerTimeMs[current] = Date.now() - qStartTime; answers[current] = i; if (i === QUESTIONS[current].answer) { combo++; if (combo > bestCombo) bestCombo = combo; } else combo = 0; playSound("click"); render(); clearAdvance(); if (current < QUESTIONS.length - 1) advanceTimer = setTimeout(function () { advanceTimer = null; current++; render(); }, 350); }
+  function choose(i) { var first = answers[current] === null; if (first) answerTimeMs[current] = Date.now() - qStartTime; answers[current] = i; var ok = (i === QUESTIONS[current].answer); if (first) { if (ok) { combo++; if (combo > bestCombo) bestCombo = combo; var add = Math.min(combo, 6) - 1; if (add > 0) comboBonus += add; if (combo >= 2) showCombo(combo); playSound(combo >= 3 ? "combo" : "correct"); } else { combo = 0; playSound("wrong"); } } else { playSound("click"); } render(); clearAdvance(); var last = current >= QUESTIONS.length - 1; if (challengeMode) { advanceTimer = setTimeout(function () { advanceTimer = null; if (!last) { current++; render(); } }, 480); } else if (!last) { advanceTimer = setTimeout(function () { advanceTimer = null; current++; render(); }, 350); } }
   function clearAdvance() { if (advanceTimer) { clearTimeout(advanceTimer); advanceTimer = null; } }
   function goRelative(d) { clearAdvance(); var n = current + d; if (n >= 0 && n < QUESTIONS.length) { current = n; render(); } }
 
@@ -230,9 +237,9 @@
   function submitQuiz() { clearAdvance(); var un = answers.filter(function (a) { return a === null; }).length; if (un > 0 && !window.confirm("아직 풀지 않은 문제가 " + un + "개 있어요.\n그래도 결과를 확인할까요? (안 푼 문제는 오답 처리)")) return; doSubmit(); }
   function doSubmit() {
     stopTimer();
-    var elapsed = Date.now() - startTime, correct = 0, speed = 0; lastWrong = [];
-    QUESTIONS.forEach(function (q, i) { if (answers[i] === q.answer) { correct++; var t = answerTimeMs[i] == null ? 99999 : answerTimeMs[i]; if (t < 3000) speed += 5; else if (t < 6000) speed += 3; else if (t < 10000) speed += 1; } else lastWrong.push(q); });
-    var total = QUESTIONS.length, pct = Math.round(correct / total * 100), score = correct * 10 + speed;
+    var elapsed = Date.now() - startTime, correct = 0, speed = 0, gained = []; lastWrong = [];
+    QUESTIONS.forEach(function (q, i) { if (answers[i] === q.answer) { correct++; gained.push(q.hl); var t = answerTimeMs[i] == null ? 99999 : answerTimeMs[i]; if (t < 3000) speed += 5; else if (t < 6000) speed += 3; else if (t < 10000) speed += 1; } else lastWrong.push(q); });
+    var total = QUESTIONS.length, pct = Math.round(correct / total * 100), score = correct * 10 + speed + comboBonus; addDex(gained); updateDexBtn();
     var newRecord = false;
     if (!currentRoom) { var b = getBest(); if (!b || score > b.score) { newRecord = true; try { localStorage.setItem(bestKey(), JSON.stringify({ score: score, pct: pct, combo: bestCombo })); } catch (e) {} } else if (bestCombo > (b.combo || 0)) { try { localStorage.setItem(bestKey(), JSON.stringify({ score: b.score, pct: b.pct, combo: bestCombo })); } catch (e) {} } }
     var grade, emoji;
@@ -254,7 +261,7 @@
       '<div class="score-hero"><span class="emoji">' + emoji + '</span><h2>' + esc(userName) + ' 님의 결과</h2>' +
       '<div class="score-ring" style="--pct:' + pct + '%"><div class="inner"><span class="big">' + correct + '/' + total + '</span><span class="small">' + pct + '점</span></div></div>' +
       '<div class="grade">' + grade + '</div>' + recNote + comboNote + '</div>' +
-      '<div class="stat-row"><div class="stat"><div class="v">🏆 ' + score + '</div><div class="l">총점</div></div><div class="stat"><div class="v">⚡ +' + speed + '</div><div class="l">속도 보너스</div></div><div class="stat"><div class="v">⏱ ' + fmtTime(elapsed) + '</div><div class="l">걸린 시간</div></div></div>' +
+      '<div class="stat-row"><div class="stat"><div class="v">🏆 ' + score + '</div><div class="l">총점</div></div><div class="stat"><div class="v">⚡ +' + speed + '</div><div class="l">속도 보너스</div></div><div class="stat"><div class="v">🔥 +' + comboBonus + '</div><div class="l">콤보 보너스</div></div><div class="stat"><div class="v">⏱ ' + fmtTime(elapsed) + '</div><div class="l">걸린 시간</div></div></div>' +
       '<div class="standing" id="standing"></div><div class="rank-status" id="rankStatus"></div>' +
       '<div class="result-actions"><button class="btn" id="retryBtn">↺ 다시 풀기 (새로 섞기)</button>' + rankBtn + wrongBtn + '</div>' +
       memoBox +
@@ -365,6 +372,119 @@
   }
   function likeReflection(id, btn) { if (isLiked(id)) return; addLiked(id); if (btn) { btn.disabled = true; btn.classList.add("liked"); } rpc("like_reflection_kr", { p_id: id }).then(function (n) { if (btn && typeof n === "number") { var s = btn.querySelector("span"); if (s) s.textContent = n; } }).catch(function () {}); }
 
+  /* ---------- 콤보 연출 ---------- */
+  function showCombo(n) {
+    var el = document.getElementById("comboPop");
+    if (!el) { el = document.createElement("div"); el.id = "comboPop"; document.body.appendChild(el); }
+    var big = n >= 5 ? " big" : "";
+    el.className = ""; el.textContent = "🔥 " + n + " 콤보!";
+    void el.offsetWidth; el.className = "show" + big;
+    clearTimeout(el._t); el._t = setTimeout(function () { el.className = ""; }, 900);
+  }
+
+  /* ---------- 방언 도감 ---------- */
+  function dexKey() { return "krDex_" + REGION; }
+  function getDex() { try { return JSON.parse(localStorage.getItem(dexKey()) || "[]"); } catch (e) { return []; } }
+  function addDex(hls) { try { var a = getDex(), ch = false; hls.forEach(function (h) { if (a.indexOf(h) < 0) { a.push(h); ch = true; } }); if (ch) localStorage.setItem(dexKey(), JSON.stringify(a)); } catch (e) {} }
+  function dexTotal() { var seen = {}, n = 0; BANK.forEach(function (q) { if (!seen[q.hl]) { seen[q.hl] = 1; n++; } }); return n; }
+  function updateDexBtn() { var b = document.getElementById("startDexBtn"); if (!b) return; var got = getDex().length, tot = dexTotal(); b.textContent = "📖 방언 도감 (" + Math.min(got, tot) + "/" + tot + ")"; }
+  function openDex() {
+    var got = getDex(), seen = {}, cards = "", n = 0, total = dexTotal();
+    BANK.forEach(function (q) {
+      if (seen[q.hl]) return; seen[q.hl] = 1;
+      var has = got.indexOf(q.hl) >= 0; if (has) n++;
+      cards += has
+        ? '<div class="dex-card got"><div class="dex-word">' + esc(q.hl) + '</div><div class="dex-mean">' + esc(q.options[q.answer]) + '</div></div>'
+        : '<div class="dex-card lock"><div class="dex-word">🔒</div><div class="dex-mean">???</div></div>';
+    });
+    var pct = total ? Math.round(n / total * 100) : 0;
+    var done = (n >= total && total > 0) ? '<div class="dex-done">🎉 ' + esc(REGION) + ' 방언 도감 완성! 축하해요!</div>' : '';
+    $("dexScreen").innerHTML =
+      '<div class="rank-head"><div><h2 class="rank-title">📖 ' + esc(REGION) + ' 방언 도감</h2><div class="rank-sub">맞힌 방언이 카드로 수집돼요</div></div></div>' +
+      '<div class="dex-rate">수집 ' + n + ' / ' + total + ' · ' + pct + '%</div>' +
+      '<div class="dex-bar"><div style="width:' + pct + '%"></div></div>' + done +
+      '<div class="dex-grid">' + cards + '</div>' +
+      '<button class="btn" id="dexBack" style="margin-top:18px">← 돌아가기</button>';
+    showOnly("dexScreen"); window.scrollTo({ top: 0 });
+    $("dexBack").onclick = function () { showOnly("startScreen"); window.scrollTo({ top: 0 }); };
+  }
+
+  /* ---------- 도전 모드 (타임어택) ---------- */
+  function startChallenge() {
+    var v = $("nameBox").classList.contains("hidden") ? userName : $("nameInput").value.trim();
+    if (!v) { $("nameErr").textContent = "이름을 입력해야 시작할 수 있어요!"; $("nameInput").focus(); return; }
+    userName = v; try { localStorage.setItem("krName", v); } catch (e) {}
+    clearAdvance(); stopTimer();
+    var big = []; for (var k = 0; k < 6; k++) big = big.concat(buildShuffled(BANK));
+    QUESTIONS = big; answers = new Array(big.length).fill(null); answerTimeMs = new Array(big.length).fill(null);
+    current = 0; lastShownIndex = -1; combo = 0; bestCombo = 0; comboBonus = 0; challengeMode = true;
+    $("whoLabel").textContent = "🙋 " + userName + " · ⏱️ 도전 모드";
+    $("quizScreen").classList.add("challenge");
+    showOnly("quizScreen"); render(); window.scrollTo({ top: 0, behavior: "smooth" });
+    challengeEndsAt = Date.now() + 60000;
+    updateChallengeTimer();
+    challengeTimer = setInterval(updateChallengeTimer, 200);
+  }
+  function updateChallengeTimer() {
+    var left = Math.max(0, challengeEndsAt - Date.now());
+    var sec = Math.ceil(left / 1000);
+    var t = $("timer"); if (t) { t.textContent = "⏱ " + sec + "초"; t.className = "timer" + (sec <= 10 ? " danger" : ""); }
+    var cs = 0; for (var i = 0; i < QUESTIONS.length; i++) { if (answers[i] != null && answers[i] === QUESTIONS[i].answer) cs++; }
+    var c = $("countLabel"); if (c) c.textContent = "✅ " + cs + " · 🔥 " + combo;
+    if (left <= 0) finishChallenge();
+  }
+  function finishChallenge() {
+    if (challengeTimer) { clearInterval(challengeTimer); challengeTimer = null; }
+    clearAdvance(); playSound("timeup");
+    var correct = 0, gained = [];
+    for (var i = 0; i < QUESTIONS.length; i++) { if (answers[i] != null && answers[i] === QUESTIONS[i].answer) { correct++; gained.push(QUESTIONS[i].hl); } }
+    addDex(gained); updateDexBtn();
+    var score = correct * 10 + comboBonus;
+    var bestK = "krChBest_" + REGION, prev = 0; try { prev = +localStorage.getItem(bestK) || 0; } catch (e) {}
+    var isNew = score > prev; if (isNew) { try { localStorage.setItem(bestK, String(score)); } catch (e) {} }
+    challengeMode = false; $("quizScreen").classList.remove("challenge");
+    var grade = correct >= 25 ? "⚡ 방언 스피드왕! 🏆" : correct >= 18 ? "🌟 대단해요!" : correct >= 10 ? "👍 좋아요!" : "💪 다시 도전!";
+    showOnly("resultScreen");
+    $("resultScreen").innerHTML =
+      '<div class="score-hero"><span class="emoji">⏱️</span><h2>' + esc(userName) + ' 님 · 도전 모드 결과</h2>' +
+      '<div class="ch-big">✅ ' + correct + ' <span>문제 정답</span></div>' +
+      '<div class="grade">' + grade + '</div>' + (isNew ? '<div class="newrecord">🎉 도전 최고 기록 경신!</div>' : '') + (bestCombo >= 2 ? '<div class="combo-note">🔥 최고 ' + bestCombo + '연속!</div>' : '') + '</div>' +
+      '<div class="stat-row"><div class="stat"><div class="v">🏆 ' + score + '</div><div class="l">총점</div></div><div class="stat"><div class="v">🔥 +' + comboBonus + '</div><div class="l">콤보 보너스</div></div><div class="stat"><div class="v">🏅 ' + Math.max(score, prev) + '</div><div class="l">도전 최고</div></div></div>' +
+      '<div class="ch-note">⏱️ 도전 모드 점수는 개인 기록이에요. (우리 반 랭킹은 일반 모드로 겨뤄요!)</div>' +
+      '<div class="result-actions"><button class="btn alt" id="chRetryBtn">⏱️ 다시 도전</button><button class="btn ghost" id="chHomeBtn">🏠 처음으로</button><button class="btn ghost" id="chDexBtn">📖 방언 도감</button></div>';
+    $("chRetryBtn").onclick = startChallenge;
+    $("chHomeBtn").onclick = function () { showOnly("startScreen"); updateDexBtn(); window.scrollTo({ top: 0 }); };
+    $("chDexBtn").onclick = openDex;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (correct >= 18) { playSound("fanfare"); runConfetti(); }
+  }
+
+  /* ---------- 추가 스타일 주입 ---------- */
+  function injectCSS() {
+    if (document.getElementById("dialectExtraCss")) return;
+    var st = document.createElement("style"); st.id = "dialectExtraCss";
+    st.textContent = [
+      "#comboPop{position:fixed;left:50%;top:32%;transform:translate(-50%,-50%);z-index:3000;pointer-events:none;font-weight:900;font-size:34px;color:#fff;background:linear-gradient(135deg,#f76707,#e8590c);padding:12px 26px;border-radius:16px;box-shadow:0 10px 30px rgba(230,80,0,.45);opacity:0;text-shadow:0 2px 6px rgba(0,0,0,.25);white-space:nowrap;}",
+      "#comboPop.show{animation:comboPop .9s ease-out;}",
+      "#comboPop.show.big{font-size:44px;background:linear-gradient(135deg,#f03e3e,#d6336c);}",
+      "@keyframes comboPop{0%{opacity:0;transform:translate(-50%,-50%) scale(.4) rotate(-8deg);}20%{opacity:1;transform:translate(-50%,-50%) scale(1.15) rotate(3deg);}45%{transform:translate(-50%,-50%) scale(1) rotate(0);}80%{opacity:1;}100%{opacity:0;transform:translate(-50%,-80%) scale(1);}}",
+      ".timer.danger{color:#e03131;font-weight:900;animation:tblink 1s steps(2) infinite;}@keyframes tblink{50%{opacity:.35;}}",
+      "#quizScreen.challenge .nav-grid,#quizScreen.challenge .progress,#quizScreen.challenge .footer-nav,#quizScreen.challenge #submitBtn{display:none!important;}",
+      ".ch-big{font-size:40px;font-weight:900;color:var(--head);margin:10px 0 4px;}.ch-big span{font-size:18px;font-weight:700;color:var(--gray);}",
+      ".ch-note{text-align:center;font-size:13px;color:var(--gray);background:var(--soft,rgba(0,0,0,.05));border-radius:10px;padding:8px 12px;margin:6px 0 4px;word-break:keep-all;}",
+      ".dex-rate{text-align:center;font-weight:800;color:var(--head);margin:6px 0 8px;}",
+      ".dex-bar{height:12px;border-radius:99px;background:rgba(0,0,0,.08);overflow:hidden;margin-bottom:14px;}.dex-bar>div{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px;transition:width .4s;}",
+      ".dex-done{text-align:center;font-weight:900;color:var(--accent2);margin:4px 0 12px;}",
+      ".dex-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;}",
+      ".dex-card{border-radius:14px;padding:14px 10px;text-align:center;border:2px solid var(--line);min-height:78px;display:flex;flex-direction:column;justify-content:center;gap:4px;}",
+      ".dex-card.got{background:linear-gradient(135deg,rgba(255,146,43,.16),rgba(255,255,255,.02));border-color:var(--accent);}",
+      ".dex-card.lock{opacity:.5;}",
+      ".dex-card .dex-word{font-size:19px;font-weight:900;color:var(--head);}",
+      ".dex-card .dex-mean{font-size:12.5px;color:var(--gray);word-break:keep-all;line-height:1.4;}"
+    ].join("");
+    document.head.appendChild(st);
+  }
+
   /* ---------- 컨페티 ---------- */
   function runConfetti() {
     var cv = $("confetti"); cv.classList.remove("hidden"); var ctx = cv.getContext("2d"); cv.width = window.innerWidth; cv.height = window.innerHeight;
@@ -381,5 +501,6 @@
   refreshRoomUI();
   renderBestBadge();
   updateNameArea();
+  updateDexBtn();
   detectRoomName();
 })();

@@ -87,6 +87,15 @@
   .blike{border:1px solid var(--line);background:var(--paper);border-radius:99px;padding:3px 10px;font-size:12.5px;font-weight:800;color:var(--gray);cursor:pointer;font-family:inherit;display:flex;gap:4px;align-items:center;}
   .blike.liked{color:#e03131;border-color:#f6c6c2;background:#fdecea;cursor:default;}
   .resetin{width:100%;margin-top:12px;padding:11px 13px;font-size:15px;text-align:center;border:2px solid var(--line);border-radius:11px;font-family:inherit;background:var(--paper);color:var(--ink);outline:none;}
+  .teamwrap{margin-top:10px;font-weight:700;font-size:14px;color:var(--head);display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap;}
+  .teamwrap select{padding:8px 12px;font-size:14px;font-family:inherit;border:2px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);outline:none;cursor:pointer;font-weight:700;}
+  :root[data-theme="dark"] .teamwrap select{background:#1b212a;}
+  .teamwrap select:focus{border-color:var(--accent);}
+  .dash-row{display:flex;gap:10px;margin:14px 0;}
+  .dash-stat{flex:1;background:var(--soft,rgba(0,0,0,.04));border:1px solid var(--line);border-radius:14px;padding:14px 6px;text-align:center;}
+  .dash-stat .ds-v{font-weight:900;font-size:22px;color:var(--accent);}
+  .dash-stat .ds-l{font-size:12px;color:var(--gray);margin-top:3px;}
+  .dash-sec{font-weight:800;color:var(--head);font-size:15px;margin:16px 0 10px;}
 </style>
 
 <button id="themeBtn" class="theme-btn" title="다크모드 전환">🌙</button>
@@ -197,6 +206,48 @@ function showClassRank(){
     }).catch(function(){ document.getElementById("viewBody").innerHTML='<div class="t-sub">⚠️ 불러오지 못했어요.</div>'; });
 }
 
+/* 모둠(팀) 대항전 */
+function getTeam(){ try{ return localStorage.getItem("krTeam")||""; }catch(e){ return ""; } }
+function setTeam(v){ try{ localStorage.setItem("krTeam",v||""); }catch(e){} }
+var _teamSyncTimer=null;
+function syncTeam(){ var nm=getMyName(); if(!currentRoom||!nm) return; clearTimeout(_teamSyncTimer); _teamSyncTimer=setTimeout(function(){ fetch(SUPABASE_URL+"/rest/v1/rpc/set_team_kr",{method:"POST",headers:HJ2(),body:JSON.stringify({p_room:currentRoom.code,p_name:nm,p_team:getTeam()})}).catch(function(){}); }, 700); }
+function showTeamRank(){
+  openView(); document.getElementById("viewBody").innerHTML='<div class="t-sub">⏳ 불러오는 중…</div>';
+  Promise.all([
+    fetch(SUPABASE_URL+"/rest/v1/scores_kr?room=eq."+encodeURIComponent(currentRoom.code)+"&select=name,score",{headers:H()}).then(function(r){return r.json();}),
+    fetch(SUPABASE_URL+"/rest/v1/team_kr?room=eq."+encodeURIComponent(currentRoom.code)+"&select=name,team",{headers:H()}).then(function(r){return r.json();})
+  ]).then(function(res){
+    var scores=Array.isArray(res[0])?res[0]:[], teams=Array.isArray(res[1])?res[1]:[];
+    var teamOf={}; teams.forEach(function(t){ if(t.team) teamOf[t.name]=t.team; });
+    var agg={}, members={};
+    scores.forEach(function(s){ var tm=teamOf[s.name]; if(!tm) return; agg[tm]=(agg[tm]||0)+s.score; (members[tm]=members[tm]||{})[s.name]=1; });
+    var arr=Object.keys(agg).map(function(t){ return {team:t,total:agg[t],n:Object.keys(members[t]).length}; }).sort(function(a,b){ return b.total-a.total; });
+    var myTeam=getTeam();
+    var list=arr.length? arr.map(function(p,i){ var rank=i+1; var medal=rank===1?"🥇":rank===2?"🥈":rank===3?"🥉":rank; var mine=(p.team===myTeam&&myTeam); return '<div class="vrow'+(mine?' me':'')+'"><span class="vno">'+medal+'</span><span class="vname">'+esc(p.team)+(mine?' (우리 모둠)':'')+'</span><span class="vscore">🏆 '+p.total+'</span><span class="vmeta">'+p.n+'명</span></div>'; }).join("") : '<div class="t-sub">아직 모둠 점수가 없어요. 입장할 때 모둠을 고르고 퀴즈를 풀어 보세요!</div>';
+    document.getElementById("viewBody").innerHTML='<div class="t-title">👥 모둠 대항 랭킹</div><div class="t-sub">'+esc(currentRoom.name)+' 방 · 모둠별 점수 합산</div>'+list;
+  }).catch(function(){ document.getElementById("viewBody").innerHTML='<div class="t-sub">⚠️ 불러오지 못했어요.</div>'; });
+}
+
+/* 선생님 대시보드 */
+function showDashboard(){
+  openView(); document.getElementById("viewBody").innerHTML='<div class="t-sub">⏳ 불러오는 중…</div>';
+  fetch(SUPABASE_URL+"/rest/v1/scores_kr?room=eq."+encodeURIComponent(currentRoom.code)+"&select=name,region,pct",{headers:H()})
+    .then(function(r){ return r.json(); }).then(function(rows){
+      rows=rows||[];
+      var names={}, byRegion={}, pctSum=0;
+      var REG=["제주","경상도","전라도","충청도","강원도"];
+      REG.forEach(function(r){ byRegion[r]={n:0,pct:0}; });
+      rows.forEach(function(x){ names[x.name]=(names[x.name]||0)+1; if(byRegion[x.region]){ byRegion[x.region].n++; byRegion[x.region].pct+=x.pct; } pctSum+=x.pct; });
+      var students=Object.keys(names).length;
+      var avg=rows.length? Math.round(pctSum/rows.length):0;
+      var finishers=Object.keys(names).filter(function(n){ return names[n]>=5; }).length;
+      var regRows=REG.map(function(r){ var b=byRegion[r]; var ap=b.n? Math.round(b.pct/b.n):0; return '<div class="vrow"><span class="vname">'+r+'</span><span class="vmeta">참여 '+b.n+'명</span><span class="vscore">평균 '+ap+'%</span></div>'; }).join("");
+      document.getElementById("viewBody").innerHTML='<div class="t-title">📊 선생님 대시보드</div><div class="t-sub">'+esc(currentRoom.name)+' 방 현황</div>'+
+        '<div class="dash-row"><div class="dash-stat"><div class="ds-v">'+students+'</div><div class="ds-l">참여 학생</div></div><div class="dash-stat"><div class="ds-v">'+avg+'%</div><div class="ds-l">평균 정확도</div></div><div class="dash-stat"><div class="ds-v">'+finishers+'</div><div class="ds-l">5지역 완주</div></div></div>'+
+        '<div class="dash-sec">지역별 참여 현황</div>'+regRows;
+    }).catch(function(){ document.getElementById("viewBody").innerHTML='<div class="t-sub">⚠️ 불러오지 못했어요.</div>'; });
+}
+
 /* 우리 반 소감 (전체) */
 function showBoard(){
   openView();
@@ -250,15 +301,20 @@ function renderRoomArea(){
     a.innerHTML='<div class="room-banner">🏫 <b>'+esc(currentRoom.name)+'</b> 방에 입장했어요 <span class="code">'+esc(currentRoom.code)+'</span>'+
       '<div class="namewrap"><label for="myName">이름(실명):</label><input id="myName" type="text" maxlength="20" placeholder="예) 김한글" value="'+esc(nm)+'"></div>'+
       '<div class="namewarn hidden" id="nameWarn">⚠️ 이름을 입력해야 게임을 시작할 수 있어요!</div><div class="sub">이름을 한 번 입력하면 모든 지역에서 그대로 참여돼요.</div>'+
+      '<div class="teamwrap">👥 모둠: <select id="teamSel"><option value="">모둠 없음</option><option>1모둠</option><option>2모둠</option><option>3모둠</option><option>4모둠</option><option>5모둠</option><option>6모둠</option></select></div>'+
       '<div class="rmbtns"><button class="btn" id="totalBtn">🏅 나의 종합 결과</button><button class="btn" id="classRankBtn">🏆 학급 전체 랭킹</button></div>'+
-      '<div class="rmbtns"><button class="btn alt2" id="boardBtn">📝 우리 반 소감</button><button class="btn ghost" id="leaveRoom">방 나가기</button></div>'+
+      '<div class="rmbtns"><button class="btn" id="teamRankBtn">👥 모둠 대항 랭킹</button><button class="btn alt2" id="boardBtn">📝 우리 반 소감</button></div>'+
+      '<div class="rmbtns"><button class="btn ghost" id="dashBtn">📊 선생님 대시보드</button><button class="btn ghost" id="leaveRoom">방 나가기</button></div>'+
       '<button class="btn ghost small" id="resetAllBtn">🧹 전체 초기화 (선생님)</button></div>';
-    $("myName").addEventListener("input",function(){ setMyName(this.value.trim()); this.style.borderColor=""; var w=$("nameWarn"); if(w) w.classList.add("hidden"); });
+    $("myName").addEventListener("input",function(){ setMyName(this.value.trim()); this.style.borderColor=""; var w=$("nameWarn"); if(w) w.classList.add("hidden"); syncTeam(); });
     $("totalBtn").onclick=showTotal;
     $("classRankBtn").onclick=showClassRank;
+    $("teamRankBtn").onclick=showTeamRank;
+    $("dashBtn").onclick=showDashboard;
     $("boardBtn").onclick=showBoard;
     $("resetAllBtn").onclick=showResetAll;
     $("leaveRoom").onclick=leaveRoom;
+    var ts=$("teamSel"); if(ts){ ts.value=getTeam(); ts.onchange=function(){ setTeam(this.value); syncTeam(); }; }
     $("gridTitle").textContent="지역을 골라 우리 반과 함께 풀어 보세요";
   } else {
     a.innerHTML='<button class="btn" id="openCreate">🏫 학급 방 만들기 (선생님)</button>';

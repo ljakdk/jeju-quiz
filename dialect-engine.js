@@ -49,6 +49,7 @@
   var userName = "", QUESTIONS = [], current = 0, answers = [], answerTimeMs = [];
   var advanceTimer = null, combo = 0, bestCombo = 0, startTime = 0, tickTimer = null, lastWrong = [];
   var comboBonus = 0, challengeMode = false, challengeTimer = null, challengeEndsAt = 0;
+  var survivalMode = false, survivalLives = 3, matchState = null;
   var soundOn = true, lastShownIndex = -1, qStartTime = 0, rankReturnTo = "start", learnReturnTo = "start";
 
   /* ---------- 화면 구성 ---------- */
@@ -73,10 +74,17 @@
         '<div class="name-box" id="nameBox"><label for="nameInput">이름을 입력해 주세요 <span class="req">(반드시 실명으로 입력)</span></label>' +
         '<input type="text" id="nameInput" placeholder="예) 김한글" maxlength="20" autocomplete="off"><div class="err" id="nameErr"></div></div>' +
         '<button class="btn" id="startBtn">퀴즈 시작하기 🚀</button>' +
+        '<div class="mode-grid">' +
+          '<button class="mode-btn" id="startChallengeBtn"><span class="me">⏱️</span><span class="mt">도전 모드</span><span class="ms">60초 타임어택</span></button>' +
+          '<button class="mode-btn" id="startSurvivalBtn"><span class="me">💥</span><span class="mt">골든벨 생존</span><span class="ms">목숨 3개</span></button>' +
+          '<button class="mode-btn" id="startMatchBtn"><span class="me">🃏</span><span class="mt">짝맞추기</span><span class="ms">기억력 게임</span></button>' +
+        '</div>' +
+        '<div class="side-grid">' +
+          '<button class="btn ghost" id="startDexBtn">📖 방언 도감</button>' +
+          '<button class="btn ghost" id="startBadgeBtn">🏅 내 배지</button>' +
+        '</div>' +
         '<button class="btn ghost hidden" id="startRankBtn">🏆 우리 반 랭킹 보기</button>' +
         '<button class="btn ghost hidden" id="startLearnBtn">📚 우리 반 배운 점 보기</button>' +
-        '<button class="btn ghost" id="startDexBtn">📖 방언 도감</button>' +
-        '<button class="btn alt" id="startChallengeBtn">⏱️ 도전 모드 · 60초 타임어택</button>' +
         '<div class="joinhint" id="joinHint"></div>' +
       '</div>' +
 
@@ -89,6 +97,8 @@
 
       '<div id="resultScreen" class="card hidden"></div>' +
       '<div id="dexScreen" class="card hidden"></div>' +
+      '<div id="badgeScreen" class="card hidden"></div>' +
+      '<div id="matchScreen" class="card hidden"></div>' +
 
       '<div id="rankScreen" class="card hidden">' +
         '<div class="rank-head"><div><h2 class="rank-title" id="rankTitle">🏆 우리 반 랭킹</h2><div class="rank-sub">' + esc(REGION) + ' 방언 순위</div></div>' +
@@ -127,6 +137,9 @@
     $("startLearnBtn").onclick = function () { openLearn("start"); };
     $("startDexBtn").onclick = openDex;
     $("startChallengeBtn").onclick = startChallenge;
+    $("startSurvivalBtn").onclick = startSurvival;
+    $("startMatchBtn").onclick = startMatch;
+    $("startBadgeBtn").onclick = openBadges;
     $("rankRefresh").onclick = loadLeaderboard;
     $("rankBack").onclick = closeRank;
     $("rankResetBtn").onclick = openResetModal;
@@ -205,7 +218,7 @@
   }
   function retryRound() { startRound(buildShuffled(BANK)); }
   function retryWrong() { if (lastWrong.length) startRound(buildShuffled(lastWrong)); }
-  function showOnly(id) { ["startScreen", "quizScreen", "resultScreen", "rankScreen", "learnScreen", "dexScreen"].forEach(function (s) { $(s).classList.add("hidden"); }); $(id).classList.remove("hidden"); }
+  function showOnly(id) { ["startScreen", "quizScreen", "resultScreen", "rankScreen", "learnScreen", "dexScreen", "badgeScreen", "matchScreen"].forEach(function (s) { $(s).classList.add("hidden"); }); $(id).classList.remove("hidden"); }
   function startRound(qs) {
     clearAdvance(); stopTimer();
     QUESTIONS = qs; answers = new Array(qs.length).fill(null); answerTimeMs = new Array(qs.length).fill(null);
@@ -223,13 +236,13 @@
     var oh = q.options.map(function (o, i) { return '<button class="opt' + (answers[current] === i ? " selected" : "") + '" data-i="' + i + '"><span class="mk">' + mk[i] + '</span><span>' + esc(o) + '</span></button>'; }).join("");
     $("questionArea").innerHTML = '<span class="qtag">제 ' + (current + 1) + ' 문제</span><div class="dialogue">' + dh + '</div><div class="qtext">' + esc(q.q) + '</div><div class="options">' + oh + '</div>';
     Array.prototype.forEach.call($("questionArea").querySelectorAll(".opt"), function (b) { b.onclick = function () { choose(+b.getAttribute("data-i")); }; });
-    if (!challengeMode) $("countLabel").textContent = (current + 1) + " / " + QUESTIONS.length;
-    if (!challengeMode) $("progressBar").style.width = ((current + 1) / QUESTIONS.length * 100) + "%";
+    if (!challengeMode && !survivalMode) $("countLabel").textContent = (current + 1) + " / " + QUESTIONS.length;
+    if (!challengeMode && !survivalMode) $("progressBar").style.width = ((current + 1) / QUESTIONS.length * 100) + "%";
     $("prevBtn").style.visibility = current === 0 ? "hidden" : "visible";
     $("nextBtn").style.visibility = current === QUESTIONS.length - 1 ? "hidden" : "visible";
     updateNav();
   }
-  function choose(i) { var first = answers[current] === null; if (first) answerTimeMs[current] = Date.now() - qStartTime; answers[current] = i; var ok = (i === QUESTIONS[current].answer); if (first) { if (ok) { combo++; if (combo > bestCombo) bestCombo = combo; var add = Math.min(combo, 6) - 1; if (add > 0) comboBonus += add; if (combo >= 2) showCombo(combo); playSound(combo >= 3 ? "combo" : "correct"); } else { combo = 0; playSound("wrong"); } } else { playSound("click"); } render(); clearAdvance(); var last = current >= QUESTIONS.length - 1; if (challengeMode) { advanceTimer = setTimeout(function () { advanceTimer = null; if (!last) { current++; render(); } }, 480); } else if (!last) { advanceTimer = setTimeout(function () { advanceTimer = null; current++; render(); }, 350); } }
+  function choose(i) { var first = answers[current] === null; if (first) answerTimeMs[current] = Date.now() - qStartTime; answers[current] = i; var ok = (i === QUESTIONS[current].answer); if (first) { if (ok) { combo++; if (combo > bestCombo) bestCombo = combo; var add = Math.min(combo, 6) - 1; if (add > 0) comboBonus += add; if (combo >= 2) showCombo(combo); playSound(combo >= 3 ? "combo" : "correct"); } else { combo = 0; playSound("wrong"); if (survivalMode) survivalLives--; } if (survivalMode) updateSurvivalHud(); } else { playSound("click"); } render(); clearAdvance(); var last = current >= QUESTIONS.length - 1; if (survivalMode) { if (first && !ok && survivalLives <= 0) { advanceTimer = setTimeout(function () { advanceTimer = null; finishSurvival(); }, 750); } else { advanceTimer = setTimeout(function () { advanceTimer = null; if (!last) { current++; render(); updateSurvivalHud(); } }, 640); } } else if (challengeMode) { advanceTimer = setTimeout(function () { advanceTimer = null; if (!last) { current++; render(); } }, 480); } else if (!last) { advanceTimer = setTimeout(function () { advanceTimer = null; current++; render(); }, 350); } }
   function clearAdvance() { if (advanceTimer) { clearTimeout(advanceTimer); advanceTimer = null; } }
   function goRelative(d) { clearAdvance(); var n = current + d; if (n >= 0 && n < QUESTIONS.length) { current = n; render(); } }
 
@@ -240,6 +253,7 @@
     var elapsed = Date.now() - startTime, correct = 0, speed = 0, gained = []; lastWrong = [];
     QUESTIONS.forEach(function (q, i) { if (answers[i] === q.answer) { correct++; gained.push(q.hl); var t = answerTimeMs[i] == null ? 99999 : answerTimeMs[i]; if (t < 3000) speed += 5; else if (t < 6000) speed += 3; else if (t < 10000) speed += 1; } else lastWrong.push(q); });
     var total = QUESTIONS.length, pct = Math.round(correct / total * 100), score = correct * 10 + speed + comboBonus; addDex(gained); updateDexBtn();
+    markPlayed(REGION); earnBadge("first"); if (pct === 100) earnBadge("perfect"); if (bestCombo >= 10) earnBadge("combo10"); updateBadgeBtn();
     var newRecord = false;
     if (!currentRoom) { var b = getBest(); if (!b || score > b.score) { newRecord = true; try { localStorage.setItem(bestKey(), JSON.stringify({ score: score, pct: pct, combo: bestCombo })); } catch (e) {} } else if (bestCombo > (b.combo || 0)) { try { localStorage.setItem(bestKey(), JSON.stringify({ score: b.score, pct: b.pct, combo: bestCombo })); } catch (e) {} } }
     var grade, emoji;
@@ -385,7 +399,7 @@
   /* ---------- 방언 도감 ---------- */
   function dexKey() { return "krDex_" + REGION; }
   function getDex() { try { return JSON.parse(localStorage.getItem(dexKey()) || "[]"); } catch (e) { return []; } }
-  function addDex(hls) { try { var a = getDex(), ch = false; hls.forEach(function (h) { if (a.indexOf(h) < 0) { a.push(h); ch = true; } }); if (ch) localStorage.setItem(dexKey(), JSON.stringify(a)); } catch (e) {} }
+  function addDex(hls) { try { var a = getDex(), ch = false; hls.forEach(function (h) { if (a.indexOf(h) < 0) { a.push(h); ch = true; } }); if (ch) localStorage.setItem(dexKey(), JSON.stringify(a)); } catch (e) {} if (getDex().length >= dexTotal() && dexTotal() > 0) earnBadge("dexmaster"); }
   function dexTotal() { var seen = {}, n = 0; BANK.forEach(function (q) { if (!seen[q.hl]) { seen[q.hl] = 1; n++; } }); return n; }
   function updateDexBtn() { var b = document.getElementById("startDexBtn"); if (!b) return; var got = getDex().length, tot = dexTotal(); b.textContent = "📖 방언 도감 (" + Math.min(got, tot) + "/" + tot + ")"; }
   function openDex() {
@@ -439,6 +453,7 @@
     var correct = 0, gained = [];
     for (var i = 0; i < QUESTIONS.length; i++) { if (answers[i] != null && answers[i] === QUESTIONS[i].answer) { correct++; gained.push(QUESTIONS[i].hl); } }
     addDex(gained); updateDexBtn();
+    markPlayed(REGION); earnBadge("first"); if (correct >= 20) earnBadge("speed"); if (bestCombo >= 10) earnBadge("combo10"); updateBadgeBtn();
     var score = correct * 10 + comboBonus;
     var bestK = "krChBest_" + REGION, prev = 0; try { prev = +localStorage.getItem(bestK) || 0; } catch (e) {}
     var isNew = score > prev; if (isNew) { try { localStorage.setItem(bestK, String(score)); } catch (e) {} }
@@ -480,9 +495,201 @@
       ".dex-card.got{background:linear-gradient(135deg,rgba(255,146,43,.16),rgba(255,255,255,.02));border-color:var(--accent);}",
       ".dex-card.lock{opacity:.5;}",
       ".dex-card .dex-word{font-size:19px;font-weight:900;color:var(--head);}",
-      ".dex-card .dex-mean{font-size:12.5px;color:var(--gray);word-break:keep-all;line-height:1.4;}"
+      ".dex-card .dex-mean{font-size:12.5px;color:var(--gray);word-break:keep-all;line-height:1.4;}",
+      "#quizScreen.survival .nav-grid,#quizScreen.survival .progress,#quizScreen.survival .footer-nav,#quizScreen.survival #submitBtn{display:none!important;}",
+      ".mode-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}",
+      ".mode-btn{display:flex;flex-direction:column;align-items:center;gap:2px;padding:15px 6px;border:1.5px solid var(--line);background:var(--paper);border-radius:16px;cursor:pointer;font-family:inherit;transition:transform .14s,border-color .18s,box-shadow .2s;}",
+      ".mode-btn:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow:var(--shadow-sm);}",
+      ".mode-btn .me{font-size:26px;line-height:1;}",
+      ".mode-btn .mt{font-weight:800;font-size:14px;color:var(--head);margin-top:4px;}",
+      ".mode-btn .ms{font-size:11px;color:var(--gray);}",
+      ".side-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;}.side-grid .btn{margin-top:0;}",
+      "@media(max-width:520px){.mode-grid{gap:7px;}.mode-btn{padding:13px 4px;}.mode-btn .mt{font-size:12.5px;}.mode-btn .ms{font-size:10px;}}",
+      ".badge-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(138px,1fr));gap:11px;}",
+      ".badge-card{text-align:center;padding:16px 10px;border:1.5px solid var(--line);border-radius:16px;background:var(--paper);}",
+      ".badge-card.got{border-color:var(--accent2);background:linear-gradient(135deg,rgba(255,193,7,.14),transparent);}",
+      ".badge-card.lock{opacity:.5;}",
+      ".badge-emoji{font-size:34px;line-height:1;}",
+      ".badge-name{font-weight:800;color:var(--head);font-size:14px;margin-top:6px;}",
+      ".badge-desc{font-size:11.5px;color:var(--gray);margin-top:3px;word-break:keep-all;line-height:1.4;}",
+      ".match-hud{display:flex;justify-content:center;gap:18px;font-weight:800;color:var(--head);margin:6px 0 14px;font-size:15px;font-variant-numeric:tabular-nums;}",
+      ".match-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;}",
+      ".match-card{aspect-ratio:3/4;border:1.5px solid var(--line);border-radius:13px;background:var(--soft);cursor:pointer;font-family:inherit;display:grid;place-items:center;padding:6px;font-weight:800;transition:transform .14s,border-color .18s,background .18s;text-align:center;word-break:keep-all;line-height:1.3;}",
+      ".match-card:hover:not([disabled]){transform:translateY(-2px);border-color:var(--accent);}",
+      ".match-card .mc-back{font-size:26px;color:var(--gray);}",
+      ".match-card.flip{background:var(--paper);border-color:var(--accent);}",
+      ".match-card.done{background:linear-gradient(135deg,rgba(47,158,68,.16),transparent);border-color:var(--green);cursor:default;opacity:.9;}",
+      ".match-card .mc-d{color:var(--accent);font-size:16px;}",
+      ".match-card .mc-m{color:var(--head);font-size:13.5px;}",
+      "@media(max-width:520px){.match-grid{gap:7px;}.match-card .mc-d{font-size:14px;}.match-card .mc-m{font-size:12px;}}",
+      "#krToast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);z-index:3200;background:var(--head);color:var(--paper);font-weight:800;font-size:14px;padding:12px 20px;border-radius:99px;box-shadow:0 10px 30px rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;max-width:90vw;text-align:center;}",
+      "#krToast.show{opacity:1;transform:translateX(-50%) translateY(0);}"
     ].join("");
     document.head.appendChild(st);
+  }
+
+  /* ---------- 토스트 알림 ---------- */
+  function toast(msg) {
+    var el = document.getElementById("krToast");
+    if (!el) { el = document.createElement("div"); el.id = "krToast"; document.body.appendChild(el); }
+    el.textContent = msg; el.className = "";
+    void el.offsetWidth; el.className = "show";
+    clearTimeout(el._t); el._t = setTimeout(function () { el.className = ""; }, 2600);
+  }
+
+  /* ---------- 배지 · 업적 ---------- */
+  var BADGES = [
+    { id: "first", e: "🎯", n: "첫 도전", d: "퀴즈를 처음 완료했어요" },
+    { id: "perfect", e: "💯", n: "만점왕", d: "정확도 100% 달성" },
+    { id: "combo10", e: "🔥", n: "콤보왕", d: "한 판에서 10연속 정답" },
+    { id: "speed", e: "⚡", n: "스피드왕", d: "도전 모드 20문제 이상" },
+    { id: "dexmaster", e: "📖", n: "도감 마스터", d: "한 지역 도감 완성" },
+    { id: "survivor", e: "💥", n: "생존왕", d: "골든벨 15문제 이상 생존" },
+    { id: "matcher", e: "🃏", n: "짝맞추기 달인", d: "실수 없이 짝맞추기 클리어" },
+    { id: "traveler", e: "🧭", n: "방언 여행가", d: "5개 지역을 모두 플레이" }
+  ];
+  function getBadges() { try { return JSON.parse(localStorage.getItem("krBadges") || "[]"); } catch (e) { return []; } }
+  function hasBadge(id) { return getBadges().indexOf(id) >= 0; }
+  function earnBadge(id) {
+    if (hasBadge(id)) return;
+    try { var a = getBadges(); a.push(id); localStorage.setItem("krBadges", JSON.stringify(a)); } catch (e) {}
+    var b = null; BADGES.forEach(function (x) { if (x.id === id) b = x; });
+    if (b) toast("🏅 새 배지 획득! " + b.e + " " + b.n);
+    updateBadgeBtn();
+  }
+  function markPlayed(region) {
+    try {
+      var a = JSON.parse(localStorage.getItem("krPlayed") || "[]");
+      if (a.indexOf(region) < 0) { a.push(region); localStorage.setItem("krPlayed", JSON.stringify(a)); }
+      if (a.length >= 5) earnBadge("traveler");
+    } catch (e) {}
+  }
+  function updateBadgeBtn() { var b = document.getElementById("startBadgeBtn"); if (!b) return; b.textContent = "🏅 내 배지 (" + getBadges().length + "/" + BADGES.length + ")"; }
+  function openBadges() {
+    var cards = BADGES.map(function (bd) {
+      var got = hasBadge(bd.id);
+      return '<div class="badge-card ' + (got ? "got" : "lock") + '"><div class="badge-emoji">' + (got ? bd.e : "🔒") + '</div><div class="badge-name">' + esc(got ? bd.n : "???") + '</div><div class="badge-desc">' + esc(bd.d) + '</div></div>';
+    }).join("");
+    $("badgeScreen").innerHTML =
+      '<div class="rank-head"><div><h2 class="rank-title">🏅 내 배지</h2><div class="rank-sub">활동하며 배지를 모아 보세요</div></div></div>' +
+      '<div class="dex-rate">획득 ' + getBadges().length + ' / ' + BADGES.length + '</div>' +
+      '<div class="badge-grid">' + cards + '</div>' +
+      '<button class="btn" id="badgeBack" style="margin-top:20px">← 돌아가기</button>';
+    showOnly("badgeScreen"); window.scrollTo({ top: 0 });
+    $("badgeBack").onclick = function () { showOnly("startScreen"); window.scrollTo({ top: 0 }); };
+  }
+
+  /* ---------- 골든벨 생존 모드 ---------- */
+  function startSurvival() {
+    var v = $("nameBox").classList.contains("hidden") ? userName : $("nameInput").value.trim();
+    if (!v) { $("nameErr").textContent = "이름을 입력해야 시작할 수 있어요!"; $("nameInput").focus(); return; }
+    userName = v; try { localStorage.setItem("krName", v); } catch (e) {}
+    clearAdvance(); stopTimer();
+    var big = []; for (var k = 0; k < 6; k++) big = big.concat(buildShuffled(BANK));
+    QUESTIONS = big; answers = new Array(big.length).fill(null); answerTimeMs = new Array(big.length).fill(null);
+    current = 0; lastShownIndex = -1; combo = 0; bestCombo = 0; comboBonus = 0;
+    survivalMode = true; survivalLives = 3;
+    $("whoLabel").textContent = "🙋 " + userName + " · 💥 골든벨 생존";
+    $("quizScreen").classList.add("challenge"); $("quizScreen").classList.add("survival");
+    showOnly("quizScreen"); render(); updateSurvivalHud(); window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  function updateSurvivalHud() {
+    var lives = survivalLives < 0 ? 0 : survivalLives;
+    var t = $("timer"); if (t) { t.textContent = "❤️".repeat(lives) + "🖤".repeat(3 - lives); t.className = "timer"; }
+    var correct = 0; for (var i = 0; i < QUESTIONS.length; i++) { if (answers[i] != null && answers[i] === QUESTIONS[i].answer) correct++; }
+    var c = $("countLabel"); if (c) c.textContent = "🔥 " + correct + " 생존";
+  }
+  function finishSurvival() {
+    clearAdvance();
+    var correct = 0, gained = [];
+    for (var i = 0; i < QUESTIONS.length; i++) { if (answers[i] != null && answers[i] === QUESTIONS[i].answer) { correct++; gained.push(QUESTIONS[i].hl); } }
+    addDex(gained); updateDexBtn();
+    var bestK = "krSurvBest_" + REGION, prev = 0; try { prev = +localStorage.getItem(bestK) || 0; } catch (e) {}
+    var isNew = correct > prev; if (isNew) { try { localStorage.setItem(bestK, String(correct)); } catch (e) {} }
+    survivalMode = false; $("quizScreen").classList.remove("challenge"); $("quizScreen").classList.remove("survival");
+    markPlayed(REGION); earnBadge("first"); if (correct >= 15) earnBadge("survivor"); if (bestCombo >= 10) earnBadge("combo10"); updateBadgeBtn();
+    var grade = correct >= 20 ? "🏆 골든벨 챔피언!" : correct >= 12 ? "🌟 방언 생존왕!" : correct >= 6 ? "👍 잘 버텼어요!" : "💪 다시 도전!";
+    showOnly("resultScreen");
+    $("resultScreen").innerHTML =
+      '<div class="score-hero"><span class="emoji">💥</span><h2>' + esc(userName) + ' 님 · 골든벨 생존 결과</h2>' +
+      '<div class="ch-big">🔥 ' + correct + ' <span>문제 생존</span></div>' +
+      '<div class="grade">' + grade + '</div>' + (isNew ? '<div class="newrecord">🎉 최고 기록 경신!</div>' : '') + (bestCombo >= 2 ? '<div class="combo-note">🔥 최고 ' + bestCombo + '연속!</div>' : '') + '</div>' +
+      '<div class="stat-row"><div class="stat"><div class="v">🔥 ' + correct + '</div><div class="l">문제 생존</div></div><div class="stat"><div class="v">🏅 ' + Math.max(correct, prev) + '</div><div class="l">최고 기록</div></div></div>' +
+      '<div class="ch-note">💥 골든벨은 개인 기록이에요. 틀리지 않고 오래 버텨 보세요!</div>' +
+      '<div class="result-actions"><button class="btn alt" id="svRetryBtn">💥 다시 도전</button><button class="btn ghost" id="svHomeBtn">🏠 처음으로</button></div>';
+    $("svRetryBtn").onclick = startSurvival;
+    $("svHomeBtn").onclick = function () { showOnly("startScreen"); updateDexBtn(); updateBadgeBtn(); window.scrollTo({ top: 0 }); };
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (correct >= 12) { playSound("fanfare"); runConfetti(); }
+  }
+
+  /* ---------- 방언 짝맞추기(기억력 게임) ---------- */
+  function startMatch() {
+    var seen = {}, pool = [];
+    BANK.forEach(function (q) { if (!seen[q.hl]) { seen[q.hl] = 1; pool.push(q); } });
+    pool = shuffle(pool.slice()).slice(0, 6);
+    var cards = [];
+    pool.forEach(function (q, idx) {
+      cards.push({ pair: idx, type: "d", text: q.hl });
+      cards.push({ pair: idx, type: "m", text: q.options[q.answer] });
+    });
+    cards = shuffle(cards);
+    matchState = { cards: cards, flipped: [], matched: 0, moves: 0, lock: false, start: Date.now(), pairs: pool.length };
+    renderMatch();
+    showOnly("matchScreen"); window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  function renderMatch() {
+    var s = matchState;
+    var grid = s.cards.map(function (c, i) {
+      var up = c.done || s.flipped.indexOf(i) >= 0;
+      var inner = up ? ('<span class="' + (c.type === "d" ? "mc-d" : "mc-m") + '">' + esc(c.text) + '</span>') : '<span class="mc-back">?</span>';
+      return '<button class="match-card ' + (c.done ? "done" : (up ? "flip" : "")) + '" data-i="' + i + '"' + (c.done ? " disabled" : "") + '>' + inner + '</button>';
+    }).join("");
+    $("matchScreen").innerHTML =
+      '<div class="rank-head"><div><h2 class="rank-title">🃏 방언 짝맞추기</h2><div class="rank-sub">방언과 뜻 카드를 짝지어 보세요</div></div></div>' +
+      '<div class="match-hud"><span>🔄 ' + s.moves + '번</span><span>✅ ' + s.matched + ' / ' + s.pairs + '</span></div>' +
+      '<div class="match-grid">' + grid + '</div>' +
+      '<div class="result-actions" style="margin-top:18px"><button class="btn alt" id="matchRetry">🔄 새 카드</button><button class="btn ghost" id="matchBack">← 돌아가기</button></div>';
+    Array.prototype.forEach.call($("matchScreen").querySelectorAll(".match-card"), function (b) { b.onclick = function () { flipMatch(+b.getAttribute("data-i")); }; });
+    $("matchRetry").onclick = startMatch;
+    $("matchBack").onclick = function () { showOnly("startScreen"); window.scrollTo({ top: 0 }); };
+  }
+  function flipMatch(i) {
+    var s = matchState; if (!s || s.lock) return;
+    var c = s.cards[i]; if (c.done || s.flipped.indexOf(i) >= 0) return;
+    s.flipped.push(i); playSound("click"); renderMatch();
+    if (s.flipped.length === 2) {
+      s.moves++; s.lock = true;
+      var a = s.cards[s.flipped[0]], b = s.cards[s.flipped[1]];
+      if (a.pair === b.pair) {
+        a.done = true; b.done = true; s.matched++; s.flipped = []; s.lock = false;
+        playSound("correct"); renderMatch();
+        if (s.matched === s.pairs) finishMatch();
+      } else {
+        playSound("wrong");
+        setTimeout(function () { s.flipped = []; s.lock = false; renderMatch(); }, 850);
+      }
+    }
+  }
+  function finishMatch() {
+    var s = matchState;
+    var secs = Math.round((Date.now() - s.start) / 1000);
+    var perfect = s.moves === s.pairs;
+    markPlayed(REGION); earnBadge("first"); if (perfect) earnBadge("matcher"); updateBadgeBtn();
+    var bestK = "krMatchBest_" + REGION, prev = 0; try { prev = +localStorage.getItem(bestK) || 0; } catch (e) {}
+    var isNew = !prev || s.moves < prev; if (isNew) { try { localStorage.setItem(bestK, String(s.moves)); } catch (e) {} }
+    playSound("fanfare"); runConfetti();
+    setTimeout(function () {
+      $("matchScreen").innerHTML =
+        '<div class="score-hero"><span class="emoji">🃏</span><h2>짝맞추기 완성!</h2>' +
+        '<div class="ch-big">🎉 ' + s.pairs + '<span> 쌍 완성</span></div>' +
+        '<div class="grade">' + (perfect ? "🏆 완벽해요! 한 번도 안 틀렸어요!" : "👍 잘했어요!") + '</div>' + (isNew ? '<div class="newrecord">🎉 최소 시도 기록 경신!</div>' : '') + '</div>' +
+        '<div class="stat-row"><div class="stat"><div class="v">🔄 ' + s.moves + '</div><div class="l">시도 횟수</div></div><div class="stat"><div class="v">⏱ ' + secs + '초</div><div class="l">걸린 시간</div></div><div class="stat"><div class="v">🏅 ' + Math.min(s.moves, prev || s.moves) + '</div><div class="l">최소 기록</div></div></div>' +
+        '<div class="result-actions" style="margin-top:20px"><button class="btn alt" id="matchAgain">🔄 다시 하기</button><button class="btn ghost" id="matchHome">🏠 처음으로</button></div>';
+      $("matchAgain").onclick = startMatch;
+      $("matchHome").onclick = function () { showOnly("startScreen"); updateDexBtn(); updateBadgeBtn(); window.scrollTo({ top: 0 }); };
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }, 750);
   }
 
   /* ---------- 컨페티 ---------- */
@@ -502,5 +709,6 @@
   renderBestBadge();
   updateNameArea();
   updateDexBtn();
+  updateBadgeBtn();
   detectRoomName();
 })();

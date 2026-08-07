@@ -65,6 +65,27 @@
   .t-total{text-align:center;margin-top:18px;font-size:27px;font-weight:900;color:var(--head);}
   .t-grade{text-align:center;margin-top:6px;font-size:18px;font-weight:800;color:var(--accent);}
   .t-note{text-align:center;margin-top:10px;font-size:14px;color:var(--gray);word-break:keep-all;line-height:1.6;}
+  .btn.alt2{background:linear-gradient(135deg,#2f9e44,#2b8a3e);}
+  .btn.small{max-width:280px;margin:12px auto 0;padding:11px;font-size:14px;}
+  .vrow{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:10px 13px;margin-top:9px;}
+  .vrow.me{border-color:var(--accent);}
+  .vno{font-weight:900;font-size:15px;color:var(--gray);width:28px;text-align:center;flex:none;}
+  .vname{font-weight:800;color:var(--head);flex:1;word-break:break-all;}
+  .vscore{font-weight:800;color:var(--accent);white-space:nowrap;}
+  .vmeta{font-size:12px;color:var(--gray);white-space:nowrap;}
+  .bwrite{margin:14px 0;}
+  .bwrite input,.bwrite textarea{width:100%;padding:11px 13px;font-size:14.5px;border:2px solid var(--line);border-radius:11px;font-family:inherit;background:var(--paper);color:var(--ink);outline:none;margin-bottom:9px;}
+  :root[data-theme="dark"] .bwrite input,:root[data-theme="dark"] .bwrite textarea,:root[data-theme="dark"] .resetin{background:#1b212a;}
+  .bwrite textarea{min-height:70px;resize:vertical;}
+  .bwrite input:focus,.bwrite textarea:focus{border-color:var(--accent);}
+  .bcount{font-size:13px;font-weight:700;color:var(--accent2);margin:6px 0 10px;}
+  .bpost{border:1px solid var(--line);border-left:5px solid var(--accent2);border-radius:12px;padding:11px 13px;margin-bottom:9px;}
+  .bhead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:5px;}
+  .bname{font-weight:800;color:var(--head);font-size:14px;}
+  .btext{font-size:14px;color:var(--ink);line-height:1.6;word-break:keep-all;white-space:pre-wrap;}
+  .blike{border:1px solid var(--line);background:var(--paper);border-radius:99px;padding:3px 10px;font-size:12.5px;font-weight:800;color:var(--gray);cursor:pointer;font-family:inherit;display:flex;gap:4px;align-items:center;}
+  .blike.liked{color:#e03131;border-color:#f6c6c2;background:#fdecea;cursor:default;}
+  .resetin{width:100%;margin-top:12px;padding:11px 13px;font-size:15px;text-align:center;border:2px solid var(--line);border-radius:11px;font-family:inherit;background:var(--paper);color:var(--ink);outline:none;}
 </style>
 
 <button id="themeBtn" class="theme-btn" title="다크모드 전환">🌙</button>
@@ -98,6 +119,14 @@
 </div>
 
 <div id="totalModal" class="tmodal hidden"><div class="tbox"><button class="tclose" id="totalClose" aria-label="닫기">✕</button><div id="totalBody"></div></div></div>
+<div id="viewModal" class="tmodal hidden"><div class="tbox"><button class="tclose" id="viewClose" aria-label="닫기">✕</button><div id="viewBody"></div></div></div>
+<div id="resetHubModal" class="tmodal hidden"><div class="tbox" style="max-width:360px"><button class="tclose" id="resetHubClose" aria-label="닫기">✕</button>
+  <div class="t-title">🧹 전체 초기화</div>
+  <div class="t-note">이 방의 <b>모든 점수·소감·기록</b>이 삭제됩니다.<br>선생님 비밀번호를 입력하세요.</div>
+  <input id="resetHubPw" type="text" class="resetin" placeholder="방 비밀번호" autocomplete="off">
+  <div class="status" id="resetHubStatus"></div>
+  <div class="rmbtns" style="margin-top:14px"><button class="btn ghost" id="resetHubCancel">취소</button><button class="btn" id="resetHubGo">초기화</button></div>
+</div></div>
 
 <script>
 const SUPABASE_URL = "https://zxdxdqsutsvnbplqaefx.supabase.co";
@@ -150,6 +179,62 @@ function renderTotal(rows,name){
   document.getElementById("totalBody").innerHTML='<div class="t-title">🏅 '+esc(name)+' 님의 종합 결과</div><div class="t-sub">'+esc(currentRoom.name)+' 방</div>'+list+'<div class="t-total">총점 🏆 '+total+'점</div><div class="t-grade">'+grade+'</div><div class="t-note">'+note+'</div>';
 }
 
+function H(){ return {apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+SUPABASE_ANON_KEY}; }
+function HJ2(){ return {apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+SUPABASE_ANON_KEY,"Content-Type":"application/json"}; }
+function openView(){ document.getElementById("viewModal").classList.remove("hidden"); }
+
+/* 학급 전체 랭킹 (5개 지역 합산) */
+function showClassRank(){
+  openView(); document.getElementById("viewBody").innerHTML='<div class="t-sub">⏳ 불러오는 중…</div>';
+  fetch(SUPABASE_URL+"/rest/v1/scores_kr?room=eq."+encodeURIComponent(currentRoom.code)+"&select=name,score",{headers:H()})
+    .then(function(r){ return r.json(); }).then(function(rows){
+      var m={}; (rows||[]).forEach(function(x){ if(!m[x.name]) m[x.name]={total:0,regions:0}; m[x.name].total+=x.score; m[x.name].regions++; });
+      var arr=Object.keys(m).map(function(n){ return {name:n,total:m[n].total,regions:m[n].regions}; }).sort(function(a,b){ return b.total-a.total; });
+      var me=getMyName();
+      var list=arr.length? arr.map(function(p,i){ var rank=i+1; var medal=rank===1?"🥇":rank===2?"🥈":rank===3?"🥉":rank; var mine=(p.name===me&&me); return '<div class="vrow'+(mine?' me':'')+'"><span class="vno">'+medal+'</span><span class="vname">'+esc(p.name)+(mine?' (나)':'')+'</span><span class="vscore">🏆 '+p.total+'</span><span class="vmeta">'+p.regions+'/5</span></div>'; }).join("") : '<div class="t-sub">아직 등록된 점수가 없어요.</div>';
+      document.getElementById("viewBody").innerHTML='<div class="t-title">🏆 학급 전체 랭킹</div><div class="t-sub">'+esc(currentRoom.name)+' 방 · 5개 지역 점수 합산</div>'+list;
+    }).catch(function(){ document.getElementById("viewBody").innerHTML='<div class="t-sub">⚠️ 불러오지 못했어요.</div>'; });
+}
+
+/* 우리 반 소감 (전체) */
+function showBoard(){
+  openView();
+  document.getElementById("viewBody").innerHTML='<div class="t-title">📝 우리 반 소감</div><div class="t-sub">'+esc(currentRoom.name)+' 방 · 방언 퀴즈 소감</div>'+
+    '<div class="bwrite"><input id="bName" type="text" placeholder="이름(실명)" maxlength="20" value="'+esc(getMyName())+'"><textarea id="bText" placeholder="방언 퀴즈를 풀어본 소감을 남겨 주세요." maxlength="300"></textarea><div class="status" id="bStatus"></div><button class="btn" id="bSubmit">소감 올리기</button></div><div id="bList"></div>';
+  document.getElementById("bSubmit").onclick=submitBoard;
+  loadBoard();
+}
+function loadBoard(){
+  var list=document.getElementById("bList"); list.innerHTML='<div class="t-sub">⏳ 불러오는 중…</div>';
+  fetch(SUPABASE_URL+"/rest/v1/reflections_kr?room=eq."+encodeURIComponent(currentRoom.code)+"&region=eq."+encodeURIComponent("전체")+"&select=id,name,text,likes&order=created_at.desc&limit=300",{headers:H()})
+    .then(function(r){ return r.json(); }).then(function(rows){
+      if(!rows||!rows.length){ list.innerHTML='<div class="t-sub">아직 소감이 없어요. 첫 소감을 남겨보세요! 🙂</div>'; return; }
+      list.innerHTML='<div class="bcount">총 '+rows.length+'개</div>'+rows.map(function(r){ var liked=isLiked(r.id); return '<div class="bpost"><div class="bhead"><span class="bname">🙋 '+esc(r.name)+'</span><button class="blike '+(liked?'liked':'')+'" '+(liked?'disabled':'')+' data-id="'+r.id+'">❤️ <span>'+(r.likes||0)+'</span></button></div><div class="btext">'+esc(r.text)+'</div></div>'; }).join("");
+      Array.prototype.forEach.call(list.querySelectorAll(".blike"),function(b){ b.onclick=function(){ likeBoard(+b.getAttribute("data-id"),b); }; });
+    }).catch(function(){ list.innerHTML='<div class="t-sub">⚠️ 불러오지 못했어요.</div>'; });
+}
+function submitBoard(){
+  var name=document.getElementById("bName").value.trim(), text=document.getElementById("bText").value.trim(), st=document.getElementById("bStatus");
+  if(!name){ st.textContent="이름을 입력해 주세요."; return; }
+  if(!text){ st.textContent="내용을 입력해 주세요."; return; }
+  st.textContent="⏳ 올리는 중…";
+  fetch(SUPABASE_URL+"/rest/v1/reflections_kr",{method:"POST",headers:HJ2(),body:JSON.stringify({room:currentRoom.code,region:"전체",name:name,text:text})})
+    .then(function(r){ if(r.ok){ setMyName(name); document.getElementById("bText").value=""; st.textContent="✅ 소감을 올렸어요!"; loadBoard(); } else st.textContent="⚠️ 실패 — 다시 시도해 주세요."; })
+    .catch(function(){ st.textContent="⚠️ 실패 — 인터넷을 확인해 주세요."; });
+}
+function isLiked(id){ try{ return JSON.parse(localStorage.getItem("krLikes")||"[]").indexOf(id)>=0; }catch(e){ return false; } }
+function addLiked(id){ try{ var a=JSON.parse(localStorage.getItem("krLikes")||"[]"); if(a.indexOf(id)<0){ a.push(id); localStorage.setItem("krLikes",JSON.stringify(a)); } }catch(e){} }
+function likeBoard(id,btn){ if(isLiked(id)) return; addLiked(id); if(btn){ btn.disabled=true; btn.classList.add("liked"); } fetch(SUPABASE_URL+"/rest/v1/rpc/like_reflection_kr",{method:"POST",headers:HJ2(),body:JSON.stringify({p_id:id})}).then(function(r){ return r.json(); }).then(function(n){ if(btn&&typeof n==="number"){ var s=btn.querySelector("span"); if(s) s.textContent=n; } }).catch(function(){}); }
+
+/* 전체 초기화 */
+function showResetAll(){ document.getElementById("resetHubPw").value=""; document.getElementById("resetHubStatus").textContent=""; document.getElementById("resetHubModal").classList.remove("hidden"); }
+function doResetAll(){
+  var pw=document.getElementById("resetHubPw").value.trim(), st=document.getElementById("resetHubStatus");
+  if(!pw){ st.textContent="비밀번호를 입력하세요."; return; }
+  st.textContent="⏳ 처리 중…";
+  fetch(SUPABASE_URL+"/rest/v1/rpc/reset_room_kr",{method:"POST",headers:HJ2(),body:JSON.stringify({p_code:currentRoom.code,p_password:pw})}).then(function(r){ return r.json(); }).then(function(n){ if(n===-1){ st.textContent="비밀번호가 틀렸어요."; return; } st.textContent="✅ 전체 초기화 완료! (점수·소감·기록 삭제)"; setTimeout(function(){ document.getElementById("resetHubModal").classList.add("hidden"); },1400); }).catch(function(){ st.textContent="실패 — 다시 시도해 주세요."; });
+}
+
 function renderRegions(){
   $("regionGrid").innerHTML = REGIONS.map(r =>
     '<a class="region" style="--c:'+r.c+'" href="'+r.file+roomQS()+'">'+
@@ -163,9 +248,14 @@ function renderRoomArea(){
     a.innerHTML='<div class="room-banner">🏫 <b>'+esc(currentRoom.name)+'</b> 방에 입장했어요 <span class="code">'+esc(currentRoom.code)+'</span>'+
       '<div class="namewrap"><label for="myName">이름(실명):</label><input id="myName" type="text" maxlength="20" placeholder="예) 김한글" value="'+esc(nm)+'"></div>'+
       '<div class="sub">이름은 한 번만 입력하면 모든 지역에서 그대로 참여돼요.</div>'+
-      '<div class="rmbtns"><button class="btn" id="totalBtn">🏅 나의 종합 결과 보기</button><button class="btn ghost" id="leaveRoom">방 나가기</button></div></div>';
+      '<div class="rmbtns"><button class="btn" id="totalBtn">🏅 나의 종합 결과</button><button class="btn" id="classRankBtn">🏆 학급 전체 랭킹</button></div>'+
+      '<div class="rmbtns"><button class="btn alt2" id="boardBtn">📝 우리 반 소감</button><button class="btn ghost" id="leaveRoom">방 나가기</button></div>'+
+      '<button class="btn ghost small" id="resetAllBtn">🧹 전체 초기화 (선생님)</button></div>';
     $("myName").addEventListener("input",function(){ setMyName(this.value.trim()); });
     $("totalBtn").onclick=showTotal;
+    $("classRankBtn").onclick=showClassRank;
+    $("boardBtn").onclick=showBoard;
+    $("resetAllBtn").onclick=showResetAll;
     $("leaveRoom").onclick=leaveRoom;
     $("gridTitle").textContent="지역을 골라 우리 반과 함께 풀어 보세요";
   } else {
@@ -233,6 +323,12 @@ $("doCreate").onclick=doCreate; $("cancelCreate").onclick=cancelCreate;
 /* ---- 시작 ---- */
 document.getElementById("totalClose").onclick=function(){ document.getElementById("totalModal").classList.add("hidden"); };
 document.getElementById("totalModal").addEventListener("click",function(e){ if(e.target.id==="totalModal") this.classList.add("hidden"); });
+document.getElementById("viewClose").onclick=function(){ document.getElementById("viewModal").classList.add("hidden"); };
+document.getElementById("viewModal").addEventListener("click",function(e){ if(e.target.id==="viewModal") this.classList.add("hidden"); });
+document.getElementById("resetHubClose").onclick=function(){ document.getElementById("resetHubModal").classList.add("hidden"); };
+document.getElementById("resetHubCancel").onclick=function(){ document.getElementById("resetHubModal").classList.add("hidden"); };
+document.getElementById("resetHubGo").onclick=doResetAll;
+document.getElementById("resetHubModal").addEventListener("click",function(e){ if(e.target.id==="resetHubModal") this.classList.add("hidden"); });
 (function init(){
   let th="light"; try{ th=localStorage.getItem("dialectTheme")||"light"; }catch(e){}
   applyTheme(th);

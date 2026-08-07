@@ -63,6 +63,23 @@
   .home-btn:active { transform: translateY(0) scale(1); }
   .home-btn.hidden { display: none; }
 
+  /* ---------- 다크모드 버튼 ---------- */
+  .theme-btn {
+    position: fixed;
+    top: 18px; right: 18px;
+    z-index: 1000;
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: var(--paper);
+    border: 2px solid var(--line);
+    box-shadow: var(--shadow);
+    font-size: 20px; line-height: 1; cursor: pointer;
+    display: grid; place-items: center;
+    transition: transform .12s, border-color .2s;
+  }
+  .theme-btn:hover { transform: translateY(-2px) scale(1.05); border-color: var(--orange); }
+  .theme-btn:active { transform: translateY(0) scale(1); }
+
   /* ---------- 확인 모달 ---------- */
   .modal-overlay {
     position: fixed; inset: 0; z-index: 2000;
@@ -363,8 +380,24 @@
   .memo-count { text-align: right; font-size: 12px; color: var(--gray); margin-top: 6px; }
   .list-count { font-size: 13px; font-weight: 700; color: var(--ocean-dark); margin-bottom: 12px; }
   .memo-post { border: 1px solid var(--line); border-left: 5px solid var(--ocean); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; background: #fff; }
-  .memo-post-name { font-weight: 800; color: var(--navy); font-size: 14.5px; margin-bottom: 6px; }
+  .memo-post-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .memo-post-name { font-weight: 800; color: var(--navy); font-size: 14.5px; }
   .memo-post-text { font-size: 14.5px; color: #444; line-height: 1.6; word-break: keep-all; white-space: pre-wrap; }
+  .like-btn {
+    border: 1px solid var(--line); background: var(--paper); border-radius: 99px;
+    padding: 4px 11px; font-size: 13px; font-weight: 800; color: var(--gray); cursor: pointer;
+    font-family: inherit; display: flex; gap: 4px; align-items: center; white-space: nowrap; transition: .15s;
+  }
+  .like-btn:hover { border-color: var(--red); }
+  .like-btn.liked { color: var(--red); border-color: #f6c6c2; background: #fdecea; cursor: default; }
+
+  /* ---------- 어려워한 방언 TOP ---------- */
+  .hard-box { margin-top: 18px; }
+  .hard-box:empty { display: none; }
+  .hard-title { font-weight: 800; color: var(--navy); font-size: 15px; margin-bottom: 10px; }
+  .hard-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .hard-chip { background: var(--cream); border: 1px solid var(--line); border-radius: 99px; padding: 6px 12px; font-size: 13.5px; font-weight: 700; color: var(--navy); }
+  .hard-chip b { color: var(--orange-dark); margin-left: 2px; }
   #learnWriteBox { margin-bottom: 16px; }
   #learnWriteForm { margin-top: 10px; }
   #learnWriteForm input, #learnWriteForm textarea {
@@ -378,11 +411,44 @@
   .confetti-canvas { position: fixed; inset: 0; z-index: 1500; pointer-events: none; }
   .confetti-canvas.hidden { display: none; }
 
+  /* ---------- 다크모드 ---------- */
+  :root[data-theme="dark"] {
+    --orange: #ff9a5c; --orange-dark: #ff8f4d;
+    --ocean: #3bb5a6; --ocean-dark: #5fd0c1;
+    --navy: #e8eef2; --cream: #2b323b; --paper: #232a33;
+    --ink: #e6e9ee; --gray: #9aa6b2; --line: #3a434e;
+    --shadow: 0 10px 40px rgba(0,0,0,.5);
+  }
+  :root[data-theme="dark"] body { background: linear-gradient(160deg, #10151b 0%, #0c1013 100%); }
+  :root[data-theme="dark"] .btn.ghost,
+  :root[data-theme="dark"] .opt,
+  :root[data-theme="dark"] .nav-grid button,
+  :root[data-theme="dark"] .score-ring .inner,
+  :root[data-theme="dark"] .rank-row,
+  :root[data-theme="dark"] .memo-post,
+  :root[data-theme="dark"] .set-tab,
+  :root[data-theme="dark"] .home-btn,
+  :root[data-theme="dark"] .modal { background: var(--paper); }
+  :root[data-theme="dark"] input[type=text],
+  :root[data-theme="dark"] textarea,
+  :root[data-theme="dark"] .room-link-box input,
+  :root[data-theme="dark"] .modal .reset-input { background: #1b212a; color: var(--ink); }
+  :root[data-theme="dark"] ::placeholder { color: #7a8591; }
+  :root[data-theme="dark"] .dialogue,
+  :root[data-theme="dark"] .share-box,
+  :root[data-theme="dark"] .best-badge { background: linear-gradient(135deg, #2a2622, #1f2a2b); border-color: #3a3630; }
+  :root[data-theme="dark"] .room-banner { background: #1f2a2b; border-color: #2f4b47; }
+  :root[data-theme="dark"] .set-tab.active { background: #22322f; }
+  :root[data-theme="dark"] .opt.selected,
+  :root[data-theme="dark"] .rank-row.me { background: #2c2620; }
+  :root[data-theme="dark"] .rev .rq { color: #b8c0c9; }
+  :root[data-theme="dark"] .memo-post-text { color: #c3cbd4; }
+
   @media (max-width: 520px) {
     .card { padding: 28px 20px; }
     .nav-grid { grid-template-columns: repeat(5, 1fr); }
     .hero h1 { font-size: 25px; }
-    .topbar { padding-left: 42px; }   /* 홈 버튼과 겹치지 않게 */
+    .topbar { padding-left: 42px; padding-right: 42px; }   /* 좌: 홈, 우: 다크모드 버튼과 겹치지 않게 */
     .timer { font-size: 12px; }
     .stat .v { font-size: 17px; }
   }
@@ -392,6 +458,9 @@
 
   <!-- 홈 버튼 (첫 화면으로) -->
   <button id="homeBtn" class="home-btn hidden" onclick="goHome()" title="처음으로" aria-label="처음으로">🏠</button>
+
+  <!-- 다크모드 전환 버튼 -->
+  <button id="themeBtn" class="theme-btn" onclick="toggleTheme()" title="다크모드 전환" aria-label="다크모드 전환">🌙</button>
 
   <!-- 홈 이동 확인 모달 -->
   <div id="confirmModal" class="modal-overlay hidden">
@@ -468,7 +537,7 @@
     <div id="roomForm">
       <div class="room-field">
         <label for="roomName">학급 이름</label>
-        <input id="roomName" type="text" placeholder="예) 3학년 2반" maxlength="30" autocomplete="off">
+        <input id="roomName" type="text" placeholder="예) 5학년 1반" maxlength="30" autocomplete="off">
       </div>
       <div class="room-field">
         <label for="roomPw">비밀번호 <span class="opt-tag">(선생님 관리용 · 점수 초기화에 필요)</span></label>
@@ -495,6 +564,7 @@
       <button class="set-tab" data-set="2" onclick="switchRankBank(2)">세트 2</button>
     </div>
     <div id="rankList" class="rank-list"></div>
+    <div id="hardWords" class="hard-box"></div>
     <button class="btn ghost room-reset-btn hidden" id="rankResetBtn" onclick="openResetModal()">🧹 우리 반 점수 초기화 (선생님)</button>
     <button class="btn" onclick="closeRank()" style="margin-top:20px">← 돌아가기</button>
   </div>
@@ -1049,6 +1119,7 @@ function closeConfirm() { $("confirmModal").classList.add("hidden"); }
 
 function doHome() {
   stopTimer();
+  stopBgm();
   $("confirmModal").classList.add("hidden");
   $("quizScreen").classList.add("hidden");
   $("resultScreen").classList.add("hidden");
@@ -1288,7 +1359,16 @@ function doSubmit() {
                        : "⚠️ 순위 등록 실패 — 인터넷을 확인해 주세요.");
       if (ok) showStanding(totalScore, bankIndex + 1);   // 우리 반 등수(세트별)
     });
+    logWrongWords(bankIndex + 1);   // 우리 반이 어려워한 방언 집계(세트별)
   }
+}
+
+/* 이번 라운드에서 틀린 방언을 집계(방·세트·이름별 최신 1회만) */
+function logWrongWords(setno) {
+  if (!RANK_ON() || !currentRoom) return;
+  rpc("log_wrongs", {
+    p_room: currentRoom.code, p_set: setno, p_name: userName, p_hls: lastWrong.map(q => q.hl)
+  }).catch(() => {});
 }
 
 /* 우리 반에서 몇 등인지 계산해 표시(방에 있을 때만) */
@@ -1367,7 +1447,7 @@ async function loadReflections() {
   list.innerHTML = `<div class="rank-empty">⏳ 불러오는 중…</div>`;
   try {
     const res = await fetch(
-      SUPABASE_URL + "/rest/v1/reflections?room=eq." + encodeURIComponent(currentRoom.code) + "&select=name,text,created_at&order=created_at.desc&limit=300",
+      SUPABASE_URL + "/rest/v1/reflections?room=eq." + encodeURIComponent(currentRoom.code) + "&select=id,name,text,likes,created_at&order=created_at.desc&limit=300",
       { headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY } }
     );
     if (!res.ok) throw new Error("http " + res.status);
@@ -1383,11 +1463,30 @@ function renderReflections(rows) {
     list.innerHTML = `<div class="rank-empty">아직 올라온 글이 없어요. 첫 글을 남겨보세요! 🍊</div>`;
     return;
   }
-  list.innerHTML = `<div class="list-count">총 ${rows.length}개의 글</div>` + rows.map(r => `
+  list.innerHTML = `<div class="list-count">총 ${rows.length}개의 글</div>` + rows.map(r => {
+    const liked = isLiked(r.id);
+    return `
     <div class="memo-post">
-      <div class="memo-post-name">🙋 ${esc(r.name)}</div>
+      <div class="memo-post-head">
+        <span class="memo-post-name">🙋 ${esc(r.name)}</span>
+        <button class="like-btn ${liked ? "liked" : ""}" ${liked ? "disabled" : ""} onclick="likeReflection(${r.id}, this)">❤️ <span>${r.likes || 0}</span></button>
+      </div>
       <div class="memo-post-text">${esc(r.text)}</div>
-    </div>`).join("");
+    </div>`;
+  }).join("");
+}
+
+/* 좋아요(기기당 글 1회) */
+function isLiked(id) { try { return JSON.parse(localStorage.getItem("jejuLikes") || "[]").includes(id); } catch (e) { return false; } }
+function addLiked(id) { try { const a = JSON.parse(localStorage.getItem("jejuLikes") || "[]"); if (!a.includes(id)) { a.push(id); localStorage.setItem("jejuLikes", JSON.stringify(a)); } } catch (e) {} }
+async function likeReflection(id, btn) {
+  if (isLiked(id)) return;
+  addLiked(id);
+  if (btn) { btn.disabled = true; btn.classList.add("liked"); }
+  try {
+    const n = await rpc("like_reflection", { p_id: id });
+    if (btn && typeof n === "number") { const s = btn.querySelector("span"); if (s) s.textContent = n; }
+  } catch (e) {}
 }
 
 /* 게시판에서 바로 배운 점 쓰기 */
@@ -1459,6 +1558,74 @@ function playSound(kind) {
     else if (kind === "click") { tone(520, 0, 0.05, "triangle"); }
     else if (kind === "fanfare") { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.13, 0.2)); }
   } catch (e) {}
+}
+
+/* ---------------- 배경음악 (Web Audio 합성 루프) ---------------- */
+let bgmCtx = null, bgmGain = null, bgmTimer = null, bgmOn = false;
+
+/* 사용자 클릭(제스처) 중에 오디오를 미리 깨워 자동재생 차단을 피함 */
+function ensureBgmCtx() {
+  try {
+    bgmCtx = bgmCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (bgmCtx.state === "suspended") bgmCtx.resume();
+  } catch (e) {}
+}
+
+function bgmNote(freq, at, dur, type, vol) {
+  const osc = bgmCtx.createOscillator();
+  const g = bgmCtx.createGain();
+  osc.type = type || "square";
+  osc.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, at);
+  g.gain.exponentialRampToValueAtTime(vol || 0.4, at + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+  osc.connect(g); g.connect(bgmGain);
+  osc.start(at); osc.stop(at + dur + 0.03);
+}
+
+/* 밝은 C–G–Am–F 진행의 아르페지오 루프(2.56초) 반복 */
+function scheduleBgm() {
+  if (!bgmOn || !bgmCtx) return;
+  const bars = [
+    { bass: 130.81, arp: [261.63, 329.63, 392.00, 523.25] },  // C
+    { bass: 98.00,  arp: [196.00, 246.94, 293.66, 392.00] },  // G
+    { bass: 110.00, arp: [220.00, 261.63, 329.63, 440.00] },  // Am
+    { bass: 87.31,  arp: [174.61, 220.00, 261.63, 349.23] }   // F
+  ];
+  const step = 0.16;
+  const now = bgmCtx.currentTime + 0.05;
+  bars.forEach((b, bi) => {
+    const t0 = bi * 4 * step;
+    bgmNote(b.bass, now + t0, 0.55, "triangle", 0.5);
+    b.arp.forEach((f, ai) => bgmNote(f, now + t0 + ai * step, 0.14, "square", 0.32));
+  });
+  bgmTimer = setTimeout(scheduleBgm, bars.length * 4 * step * 1000);
+}
+
+function startBgm() {
+  if (bgmOn) return;
+  ensureBgmCtx();
+  if (!bgmCtx) return;
+  if (!bgmGain) { bgmGain = bgmCtx.createGain(); bgmGain.connect(bgmCtx.destination); }
+  bgmGain.gain.cancelScheduledValues(bgmCtx.currentTime);
+  bgmGain.gain.setValueAtTime(0.12, bgmCtx.currentTime);
+  bgmOn = true;
+  scheduleBgm();
+  updateBgmBtn();
+}
+
+function stopBgm() {
+  bgmOn = false;
+  if (bgmTimer) { clearTimeout(bgmTimer); bgmTimer = null; }
+  if (bgmGain && bgmCtx) { try { bgmGain.gain.setTargetAtTime(0.0001, bgmCtx.currentTime, 0.12); } catch (e) {} }
+  updateBgmBtn();
+}
+
+function toggleBgm() { if (bgmOn) stopBgm(); else startBgm(); }
+
+function updateBgmBtn() {
+  const b = $("bgmBtn");
+  if (b) b.textContent = bgmOn ? "🔇 배경음악 끄기" : "🎵 배경음악 켜기";
 }
 
 /* ---------------- 컨페티 (고득점 축하) ---------------- */
@@ -1576,6 +1743,26 @@ async function loadLeaderboard() {
   } catch (e) {
     list.innerHTML = `<div class="rank-empty">⚠️ 랭킹을 불러오지 못했어요.<br>인터넷 연결과 Supabase 설정을 확인해 주세요.</div>`;
   }
+  loadHardest(rankBank);   // 어려워한 방언 TOP(같은 세트)
+}
+
+/* 우리 반이 어려워한 방언 TOP */
+async function loadHardest(setno) {
+  const box = $("hardWords");
+  if (!box) return;
+  if (!RANK_ON() || !currentRoom) { box.innerHTML = ""; return; }
+  try {
+    const rows = await rpc("hardest_words", { p_room: currentRoom.code, p_set: setno });
+    renderHard(rows);
+  } catch (e) { box.innerHTML = ""; }
+}
+function renderHard(rows) {
+  const box = $("hardWords");
+  if (!Array.isArray(rows) || !rows.length) { box.innerHTML = ""; return; }
+  box.innerHTML = `<div class="hard-title">🧗 우리 반이 어려워한 방언 TOP</div>` +
+    `<div class="hard-chips">` +
+    rows.map(r => `<span class="hard-chip">${esc(r.hl)} <b>${r.cnt}명</b></span>`).join("") +
+    `</div>`;
 }
 
 function renderRank(rows) {
@@ -1660,6 +1847,7 @@ function refreshStartButtons() {
 
 /* --- 방 만들기 화면 --- */
 function openRoomCreate() {
+  stopBgm();
   createdRoom = null;
   $("roomName").value = "";
   $("roomPw").value = "";
@@ -1672,6 +1860,7 @@ function openRoomCreate() {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 function closeRoom() {
+  stopBgm();
   $("roomScreen").classList.add("hidden");
   $("startScreen").classList.remove("hidden");
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1682,6 +1871,7 @@ function setRoomStatus(msg, kind) {
 }
 
 async function doCreateRoom() {
+  ensureBgmCtx();   // 클릭(제스처) 중에 오디오 미리 깨우기(자동재생 대비)
   const name = $("roomName").value.trim();
   const pw = $("roomPw").value.trim();
   if (!name || !pw) { setRoomStatus("학급 이름과 비밀번호를 모두 입력하세요.", "warn"); return; }
@@ -1712,9 +1902,11 @@ function showRoomResult(code, name) {
       <button class="btn ghost" onclick="copyRoomLink()">복사</button>
     </div>
     <div class="rank-status" id="roomShareHint">이 링크나 QR을 학생들에게 공유하세요. 비밀번호는 점수 초기화 때 필요하니 기억해 두세요.</div>
-    <button class="btn ocean" onclick="enterCreatedRoom()" style="margin-top:14px">이 방으로 입장</button>
+    <button class="btn ghost" id="bgmBtn" onclick="toggleBgm()" style="margin-top:14px">🔇 배경음악 끄기</button>
+    <button class="btn ocean" onclick="enterCreatedRoom()" style="margin-top:10px">이 방으로 입장</button>
     <button class="btn ghost" onclick="doHome()" style="margin-top:10px">처음으로</button>
   `;
+  startBgm();   // 방 생성 축하 배경음악 자동 재생
 }
 
 /* QR 이미지를 파일로 저장 */
@@ -1748,6 +1940,7 @@ async function copyRoomLink() {
 /* 만든 방으로 입장(선생님 확인용) — 주소창에도 방 정보 반영 */
 function enterCreatedRoom() {
   if (!createdRoom) return;
+  stopBgm();
   currentRoom = createdRoom;
   try { history.replaceState(null, "", roomLink(currentRoom.code)); } catch (e) {}
   $("roomScreen").classList.add("hidden");
@@ -1782,8 +1975,24 @@ async function doResetRoom() {
   }
 }
 
+/* ---------------- 다크모드 ---------------- */
+function applyTheme(theme) {
+  if (theme === "dark") document.documentElement.setAttribute("data-theme", "dark");
+  else document.documentElement.removeAttribute("data-theme");
+  const b = $("themeBtn");
+  if (b) b.textContent = (theme === "dark") ? "☀️" : "🌙";
+  try { localStorage.setItem("jejuTheme", theme); } catch (e) {}
+}
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+  applyTheme(isDark ? "light" : "dark");
+}
+
 /* ---------------- 초기화 ---------------- */
 (function init() {
+  let saved = "light";
+  try { saved = localStorage.getItem("jejuTheme") || "light"; } catch (e) {}
+  applyTheme(saved);
   renderBestBadge();
   refreshStartButtons();
   detectRoom();   // 링크(?room=코드)로 들어왔으면 방 입장

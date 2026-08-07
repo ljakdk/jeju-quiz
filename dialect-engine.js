@@ -67,7 +67,8 @@
         '<div class="sub">얼마나 알고 있을까요?</div>' +
         '<p class="desc">짧은 대화를 읽고 방언의 뜻을 맞혀 보세요. 총 ' + BANK.length + '문제!</p></div>' +
         '<div class="best-badge hidden" id="bestBadge"></div>' +
-        '<div class="name-box"><label for="nameInput">이름을 입력해 주세요 <span class="req">(반드시 실명으로 입력)</span></label>' +
+        '<div class="greet hidden" id="greetBox"></div>' +
+        '<div class="name-box" id="nameBox"><label for="nameInput">이름을 입력해 주세요 <span class="req">(반드시 실명으로 입력)</span></label>' +
         '<input type="text" id="nameInput" placeholder="예) 김한글" maxlength="20" autocomplete="off"><div class="err" id="nameErr"></div></div>' +
         '<button class="btn" id="startBtn">퀴즈 시작하기 🚀</button>' +
         '<button class="btn ghost hidden" id="startRankBtn">🏆 우리 반 랭킹 보기</button>' +
@@ -179,7 +180,22 @@
   function stopTimer() { if (tickTimer) { clearInterval(tickTimer); tickTimer = null; } }
 
   /* ---------- 라운드 ---------- */
-  function startQuiz() { var v = $("nameInput").value.trim(); if (!v) { $("nameErr").textContent = "이름을 입력해야 시작할 수 있어요!"; $("nameInput").focus(); return; } userName = v; startRound(buildShuffled(BANK)); }
+  function startQuiz() {
+    var v = $("nameBox").classList.contains("hidden") ? userName : $("nameInput").value.trim();
+    if (!v) { $("nameErr").textContent = "이름을 입력해야 시작할 수 있어요!"; $("nameInput").focus(); return; }
+    userName = v; try { localStorage.setItem("krName", v); } catch (e) {}
+    startRound(buildShuffled(BANK));
+  }
+  function updateNameArea() {
+    var stored = ""; try { stored = localStorage.getItem("krName") || ""; } catch (e) {}
+    if (stored) {
+      userName = stored;
+      $("greetBox").classList.remove("hidden");
+      $("greetBox").innerHTML = '🙋 <b>' + esc(stored) + '</b> 님으로 참여 중 <button type="button" class="linkbtn" id="changeNameBtn">이름 바꾸기</button>';
+      $("nameBox").classList.add("hidden");
+      $("changeNameBtn").onclick = function () { $("greetBox").classList.add("hidden"); $("nameBox").classList.remove("hidden"); $("nameInput").value = stored; $("nameInput").focus(); };
+    } else { $("greetBox").classList.add("hidden"); $("nameBox").classList.remove("hidden"); }
+  }
   function retryRound() { startRound(buildShuffled(BANK)); }
   function retryWrong() { if (lastWrong.length) startRound(buildShuffled(lastWrong)); }
   function showOnly(id) { ["startScreen", "quizScreen", "resultScreen", "rankScreen", "learnScreen"].forEach(function (s) { $(s).classList.add("hidden"); }); $(id).classList.remove("hidden"); }
@@ -364,5 +380,6 @@
   applyTheme(savedTheme);
   refreshRoomUI();
   renderBestBadge();
+  updateNameArea();
   detectRoomName();
 })();

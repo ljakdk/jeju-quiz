@@ -165,6 +165,9 @@ input[type=text]:focus { border-color: var(--accent); }
 
 /* 방 배너 / 실명 안내 / 입장 힌트 */
 .req { color: var(--red); font-weight: 700; font-size: 13px; }
+.greet { margin-top: 22px; text-align: center; font-size: 16px; font-weight: 700; color: var(--head); word-break: keep-all; }
+.greet b { color: var(--accent); }
+.linkbtn { background: none; border: none; color: var(--accent); font-weight: 800; font-size: 13px; cursor: pointer; text-decoration: underline; font-family: inherit; margin-left: 6px; }
 .room-banner { margin-bottom: 14px; padding: 11px 15px; border-radius: 14px; background: var(--cream); border: 1px solid var(--line); color: var(--accent); font-size: 14px; font-weight: 800; text-align: center; word-break: keep-all; }
 .room-banner .room-code { color: var(--accent2); font-variant-numeric: tabular-nums; letter-spacing: 1px; }
 .joinhint { margin-top: 14px; font-size: 13px; color: var(--gray); text-align: center; line-height: 1.6; word-break: keep-all; }

@@ -46,6 +46,25 @@
   .region .go{margin-top:12px;font-weight:800;font-size:14px;color:var(--c);}
   footer{text-align:center;color:var(--gray);font-size:13px;margin-top:26px;line-height:1.7;word-break:keep-all;}
   .hidden{display:none;}
+  .namewrap{display:flex;align-items:center;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap;}
+  .namewrap label{font-weight:700;font-size:14px;color:var(--head);}
+  .namewrap input{width:170px;padding:9px 12px;font-size:15px;border:2px solid var(--line);border-radius:10px;font-family:inherit;background:var(--paper);color:var(--ink);outline:none;}
+  :root[data-theme="dark"] .namewrap input{background:#1b212a;}
+  .namewrap input:focus{border-color:var(--accent);}
+  .rmbtns{display:flex;gap:10px;margin-top:14px;}.rmbtns .btn{margin-top:0;}
+  .tmodal{position:fixed;inset:0;z-index:2000;background:rgba(20,25,30,.55);display:flex;align-items:center;justify-content:center;padding:20px;}
+  .tmodal.hidden{display:none;}
+  .tbox{background:var(--paper);border-radius:20px;padding:26px 22px;max-width:420px;width:100%;box-shadow:var(--shadow);position:relative;max-height:85vh;overflow:auto;}
+  .tclose{position:absolute;top:12px;right:14px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--gray);}
+  .t-title{text-align:center;font-size:21px;font-weight:900;color:var(--head);}
+  .t-sub{text-align:center;color:var(--gray);font-size:14px;margin-top:4px;}
+  .t-row{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:11px 14px;margin-top:10px;}
+  .t-row .r-emoji{font-size:22px;}.t-row .r-name{font-weight:800;color:var(--head);flex:1;}
+  .t-row .r-score{font-weight:800;color:var(--accent);white-space:nowrap;}
+  .t-row.undone{opacity:.55;}.t-row .r-todo{color:var(--gray);font-size:13px;font-weight:700;}
+  .t-total{text-align:center;margin-top:18px;font-size:27px;font-weight:900;color:var(--head);}
+  .t-grade{text-align:center;margin-top:6px;font-size:18px;font-weight:800;color:var(--accent);}
+  .t-note{text-align:center;margin-top:10px;font-size:14px;color:var(--gray);word-break:keep-all;line-height:1.6;}
 </style>
 
 <button id="themeBtn" class="theme-btn" title="다크모드 전환">🌙</button>
@@ -78,6 +97,8 @@
   <footer>방언 표현은 지역·세대에 따라 다를 수 있어요. 재미있게 즐겨 주세요! 🙂</footer>
 </div>
 
+<div id="totalModal" class="tmodal hidden"><div class="tbox"><button class="tclose" id="totalClose" aria-label="닫기">✕</button><div id="totalBody"></div></div></div>
+
 <script>
 const SUPABASE_URL = "https://zxdxdqsutsvnbplqaefx.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp4ZHhkcXN1dHN2bmJwbHFhZWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5NjQyMTQsImV4cCI6MjEwMTU0MDIxNH0.Xv5l9F8696UYIxmcNltJwDtz_VS9aBp2hYfEvhjl33U";
@@ -102,6 +123,32 @@ let currentRoom = null;
   if(code){ code=code.toUpperCase(); let nm=code; try{ const s=JSON.parse(localStorage.getItem("krRoom")||"null"); if(s&&s.code===code) nm=s.name; }catch(e){} currentRoom={code,name:nm}; try{localStorage.setItem("krRoomCode",code);}catch(e){} }
 })();
 function roomQS(){ return currentRoom ? ("?room="+encodeURIComponent(currentRoom.code)) : ""; }
+function getMyName(){ try{ return localStorage.getItem("krName")||""; }catch(e){ return ""; } }
+function setMyName(v){ try{ if(v){ localStorage.setItem("krName",v); } }catch(e){} }
+const REGION_ORDER=[{n:"제주",e:"🍊"},{n:"경상도",e:"🌊"},{n:"전라도",e:"🌾"},{n:"충청도",e:"🏞️"},{n:"강원도",e:"⛰️"}];
+function showTotal(){
+  const name=getMyName();
+  if(!name){ document.getElementById("myName").focus(); document.getElementById("myName").style.borderColor="#e03131"; return; }
+  const body=document.getElementById("totalBody"); body.innerHTML='<div class="t-sub">⏳ 불러오는 중…</div>';
+  document.getElementById("totalModal").classList.remove("hidden");
+  fetch(SUPABASE_URL+"/rest/v1/scores_kr?room=eq."+encodeURIComponent(currentRoom.code)+"&name=eq."+encodeURIComponent(name)+"&select=region,score,pct",{headers:{apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+SUPABASE_ANON_KEY}})
+    .then(r=>r.json()).then(rows=>renderTotal(rows,name)).catch(function(e){ body.innerHTML='<div class="t-sub">⚠️ 불러오지 못했어요.</div>'; });
+}
+function renderTotal(rows,name){
+  const map={}; (rows||[]).forEach(function(r){ map[r.region]=r; });
+  let total=0,done=0,pctSum=0;
+  const list=REGION_ORDER.map(function(reg){
+    const r=map[reg.n];
+    if(r){ done++; total+=r.score; pctSum+=r.pct; return '<div class="t-row"><span class="r-emoji">'+reg.e+'</span><span class="r-name">'+reg.n+'</span><span class="r-score">🏆 '+r.score+' · '+r.pct+'%</span></div>'; }
+    return '<div class="t-row undone"><span class="r-emoji">'+reg.e+'</span><span class="r-name">'+reg.n+'</span><span class="r-todo">아직 안 풂</span></div>';
+  }).join("");
+  const avg=done?Math.round(pctSum/done):0;
+  let grade;
+  if(done===5){ if(avg>=90)grade="🏆 방언 박사님!"; else if(avg>=75)grade="🌟 방언 고수!"; else if(avg>=60)grade="👍 훌륭해요!"; else if(avg>=40)grade="🙂 잘했어요!"; else grade="💪 더 도전해봐요!"; }
+  else grade="아직 "+(5-done)+"개 지역이 남았어요!";
+  const note=done===5?("5개 지역 모두 완료! 평균 정확도 "+avg+"%"):(done+"/5 지역 완료 · 남은 지역을 마저 풀어 총점을 채워 보세요!");
+  document.getElementById("totalBody").innerHTML='<div class="t-title">🏅 '+esc(name)+' 님의 종합 결과</div><div class="t-sub">'+esc(currentRoom.name)+' 방</div>'+list+'<div class="t-total">총점 🏆 '+total+'점</div><div class="t-grade">'+grade+'</div><div class="t-note">'+note+'</div>';
+}
 
 function renderRegions(){
   $("regionGrid").innerHTML = REGIONS.map(r =>
@@ -112,9 +159,13 @@ function renderRegions(){
 function renderRoomArea(){
   const a=$("roomArea");
   if(currentRoom){
+    const nm=getMyName();
     a.innerHTML='<div class="room-banner">🏫 <b>'+esc(currentRoom.name)+'</b> 방에 입장했어요 <span class="code">'+esc(currentRoom.code)+'</span>'+
-      '<div class="sub">아래 지역을 골라 풀면 우리 반 랭킹·게시판에 함께 쌓여요.</div>'+
-      '<button class="btn ghost" id="leaveRoom" style="max-width:200px;margin:12px auto 0;">방 나가기</button></div>';
+      '<div class="namewrap"><label for="myName">이름(실명):</label><input id="myName" type="text" maxlength="20" placeholder="예) 김한글" value="'+esc(nm)+'"></div>'+
+      '<div class="sub">이름은 한 번만 입력하면 모든 지역에서 그대로 참여돼요.</div>'+
+      '<div class="rmbtns"><button class="btn" id="totalBtn">🏅 나의 종합 결과 보기</button><button class="btn ghost" id="leaveRoom">방 나가기</button></div></div>';
+    $("myName").addEventListener("input",function(){ setMyName(this.value.trim()); });
+    $("totalBtn").onclick=showTotal;
     $("leaveRoom").onclick=leaveRoom;
     $("gridTitle").textContent="지역을 골라 우리 반과 함께 풀어 보세요";
   } else {
@@ -180,6 +231,8 @@ $("themeBtn").onclick=()=>applyTheme(document.documentElement.getAttribute("data
 $("doCreate").onclick=doCreate; $("cancelCreate").onclick=cancelCreate;
 
 /* ---- 시작 ---- */
+document.getElementById("totalClose").onclick=function(){ document.getElementById("totalModal").classList.add("hidden"); };
+document.getElementById("totalModal").addEventListener("click",function(e){ if(e.target.id==="totalModal") this.classList.add("hidden"); });
 (function init(){
   let th="light"; try{ th=localStorage.getItem("dialectTheme")||"light"; }catch(e){}
   applyTheme(th);

@@ -49,7 +49,7 @@
   var userName = "", QUESTIONS = [], current = 0, answers = [], answerTimeMs = [];
   var advanceTimer = null, combo = 0, bestCombo = 0, startTime = 0, tickTimer = null, lastWrong = [];
   var comboBonus = 0, challengeMode = false, challengeTimer = null, challengeEndsAt = 0;
-  var survivalMode = false, survivalLives = 3, matchState = null;
+  var survivalMode = false, survivalLives = 3, matchState = null, battleState = null;
   var soundOn = true, lastShownIndex = -1, qStartTime = 0, rankReturnTo = "start", learnReturnTo = "start";
 
   /* ---------- 화면 구성 ---------- */
@@ -124,6 +124,7 @@
         '<div class="rank-status" id="resetStatus"></div>' +
         '<div class="modal-btns"><button class="btn ghost" id="resetCancel">취소</button><button class="btn" id="resetGo">초기화</button></div></div></div>' +
 
+      '<div id="battleScreen" class="battle-screen hidden"></div>' +
       '<canvas id="confetti" class="confetti-canvas hidden"></canvas>';
 
     $("themeBtn").onclick = toggleTheme;
@@ -234,7 +235,7 @@
     var dh = q.dialogue.map(function (p) { var t = p[1].split(q.hl).join('<span class="hl">' + esc(q.hl) + '</span>'); return '<div class="line"><span class="spk">' + esc(p[0]) + ':</span>' + t + '</div>'; }).join("");
     var mk = ["A", "B", "C", "D"];
     var oh = q.options.map(function (o, i) { return '<button class="opt' + (answers[current] === i ? " selected" : "") + '" data-i="' + i + '"><span class="mk">' + mk[i] + '</span><span>' + esc(o) + '</span></button>'; }).join("");
-    $("questionArea").innerHTML = '<span class="qtag">제 ' + (current + 1) + ' 문제</span><div class="dialogue">' + dh + '</div><div class="qtext">' + esc(q.q) + '</div><div class="options">' + oh + '</div>';
+    $("questionArea").innerHTML = '<span class="qtag">제 ' + (current + 1) + ' 문제</span><div class="dialogue">' + dh + '</div><div class="qtext">' + esc(q.q) + '</div><div class="options' + (answers[current] !== null ? ' locked' : '') + '">' + oh + '</div>';
     Array.prototype.forEach.call($("questionArea").querySelectorAll(".opt"), function (b) { b.onclick = function () { choose(+b.getAttribute("data-i")); }; });
     if (!challengeMode && !survivalMode) $("countLabel").textContent = (current + 1) + " / " + QUESTIONS.length;
     if (!challengeMode && !survivalMode) $("progressBar").style.width = ((current + 1) / QUESTIONS.length * 100) + "%";
@@ -242,7 +243,7 @@
     $("nextBtn").style.visibility = current === QUESTIONS.length - 1 ? "hidden" : "visible";
     updateNav();
   }
-  function choose(i) { var first = answers[current] === null; if (first) answerTimeMs[current] = Date.now() - qStartTime; answers[current] = i; var ok = (i === QUESTIONS[current].answer); if (first) { if (ok) { combo++; if (combo > bestCombo) bestCombo = combo; var add = Math.min(combo, 6) - 1; if (add > 0) comboBonus += add; if (combo >= 2) showCombo(combo); playSound(combo >= 3 ? "combo" : "correct"); } else { combo = 0; playSound("wrong"); if (survivalMode) survivalLives--; } if (survivalMode) updateSurvivalHud(); } else { playSound("click"); } render(); clearAdvance(); var last = current >= QUESTIONS.length - 1; if (survivalMode) { if (first && !ok && survivalLives <= 0) { advanceTimer = setTimeout(function () { advanceTimer = null; finishSurvival(); }, 750); } else { advanceTimer = setTimeout(function () { advanceTimer = null; if (!last) { current++; render(); updateSurvivalHud(); } }, 640); } } else if (challengeMode) { advanceTimer = setTimeout(function () { advanceTimer = null; if (!last) { current++; render(); } }, 480); } else if (!last) { advanceTimer = setTimeout(function () { advanceTimer = null; current++; render(); }, 350); } }
+  function choose(i) { if (answers[current] !== null) return; answerTimeMs[current] = Date.now() - qStartTime; answers[current] = i; var ok = (i === QUESTIONS[current].answer); if (ok) { combo++; if (combo > bestCombo) bestCombo = combo; var add = Math.min(combo, 6) - 1; if (add > 0) comboBonus += add; if (combo >= 2) showCombo(combo); playSound(combo >= 3 ? "combo" : "correct"); } else { combo = 0; playSound("wrong"); if (survivalMode) survivalLives--; } if (survivalMode) updateSurvivalHud(); render(); clearAdvance(); var last = current >= QUESTIONS.length - 1; if (survivalMode) { if (!ok && survivalLives <= 0) { advanceTimer = setTimeout(function () { advanceTimer = null; finishSurvival(); }, 750); } else { advanceTimer = setTimeout(function () { advanceTimer = null; if (!last) { current++; render(); updateSurvivalHud(); } }, 640); } } else if (challengeMode) { advanceTimer = setTimeout(function () { advanceTimer = null; if (!last) { current++; render(); } }, 480); } else if (!last) { advanceTimer = setTimeout(function () { advanceTimer = null; current++; render(); }, 350); } }
   function clearAdvance() { if (advanceTimer) { clearTimeout(advanceTimer); advanceTimer = null; } }
   function goRelative(d) { clearAdvance(); var n = current + d; if (n >= 0 && n < QUESTIONS.length) { current = n; render(); } }
 
@@ -523,7 +524,58 @@
       ".match-card .mc-m{color:var(--head);font-size:13.5px;}",
       "@media(max-width:520px){.match-grid{gap:7px;}.match-card .mc-d{font-size:14px;}.match-card .mc-m{font-size:12px;}}",
       "#krToast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);z-index:3200;background:var(--head);color:var(--paper);font-weight:800;font-size:14px;padding:12px 20px;border-radius:99px;box-shadow:0 10px 30px rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;max-width:90vw;text-align:center;}",
-      "#krToast.show{opacity:1;transform:translateX(-50%) translateY(0);}"
+      "#krToast.show{opacity:1;transform:translateX(-50%) translateY(0);}",
+      ".options.locked .opt{cursor:default;}",
+      ".options.locked .opt:not(.selected){opacity:.5;pointer-events:none;}",
+      ".options.locked .opt.selected{pointer-events:none;}",
+      ".battle-screen{position:fixed;inset:0;z-index:4000;background:linear-gradient(160deg,#1a1f2e,#0d1017);color:#fff;display:flex;flex-direction:column;padding:14px 16px 16px;overflow:hidden;touch-action:manipulation;}",
+      ".battle-screen.hidden{display:none;}",
+      ".bt-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:none;margin-bottom:6px;}",
+      ".bt-title2{font-weight:900;font-size:clamp(16px,2.4vw,24px);}",
+      ".bt-count{font-weight:800;font-size:clamp(14px,2vw,20px);opacity:.85;font-variant-numeric:tabular-nums;}",
+      ".bt-exit{background:rgba(255,255,255,.16);border:none;color:#fff;font-weight:800;font-size:15px;padding:8px 16px;border-radius:10px;cursor:pointer;font-family:inherit;}",
+      ".bt-exit:hover{background:rgba(255,255,255,.28);}",
+      ".bt-q{flex:none;text-align:center;padding:6px 8px 10px;}",
+      ".bt-q .bt-dia{font-size:clamp(14px,1.8vw,20px);opacity:.8;margin-bottom:4px;word-break:keep-all;}",
+      ".bt-q .bt-ask{font-size:clamp(20px,3vw,34px);font-weight:900;margin-bottom:8px;word-break:keep-all;}",
+      ".bt-q .bt-opts{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;}",
+      ".bt-q .bt-opt{background:rgba(255,255,255,.12);border-radius:10px;padding:6px 14px;font-size:clamp(14px,1.8vw,20px);font-weight:800;}",
+      ".bt-q .bt-opt b{color:#ffd43b;margin-right:4px;}",
+      ".bt-q .bt-opt.corr{background:#2f9e44;box-shadow:0 0 20px rgba(47,158,68,.7);}",
+      ".bt-players{flex:1;display:grid;gap:12px;min-height:0;}",
+      ".bt-players.p2{grid-template-columns:1fr 1fr;}",
+      ".bt-players.p3{grid-template-columns:1fr 1fr 1fr;}",
+      ".bt-players.p4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;}",
+      ".bt-zone{border-radius:16px;padding:10px 12px;display:flex;flex-direction:column;border:3px solid;background:rgba(255,255,255,.05);min-height:0;transition:box-shadow .15s,opacity .15s;}",
+      ".bt-zone .bt-name{font-weight:900;font-size:clamp(15px,2vw,22px);display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}",
+      ".bt-zone .bt-score{color:#fff;font-size:clamp(15px,2vw,22px);}",
+      ".bt-winmark{font-size:26px;}",
+      ".bt-grid{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:8px;min-height:0;}",
+      ".bt-btn{border:none;border-radius:12px;color:#fff;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px;transition:transform .07s,filter .12s;box-shadow:inset 0 -4px 0 rgba(0,0,0,.18);}",
+      ".bt-btn:active{transform:scale(.95);filter:brightness(1.15);}",
+      ".bt-btn .bl{font-weight:900;font-size:clamp(20px,3vw,34px);line-height:1;}",
+      ".bt-btn .bo{font-weight:700;font-size:clamp(11px,1.4vw,16px);opacity:.95;word-break:keep-all;text-align:center;line-height:1.15;}",
+      ".bt-zone.win{box-shadow:0 0 0 4px #ffd43b,0 0 44px rgba(255,212,59,.6);}",
+      ".bt-zone.lock{opacity:.4;}",
+      ".bt-zone.lock .bt-btn{pointer-events:none;}",
+      ".bt-setup{margin:auto;text-align:center;max-width:640px;padding:20px;}",
+      ".bt-setup .bt-title{font-weight:900;font-size:clamp(28px,5vw,46px);margin-bottom:10px;}",
+      ".bt-setup .bt-sub{font-size:clamp(15px,2vw,20px);opacity:.85;margin-bottom:26px;word-break:keep-all;}",
+      ".bt-setup .bt-sub2{font-size:clamp(17px,2.2vw,22px);font-weight:800;margin-bottom:14px;}",
+      ".bt-pick{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:22px;}",
+      ".bt-pickbtn{background:linear-gradient(135deg,#4263eb,#3b5bdb);border:none;color:#fff;font-weight:900;font-size:clamp(18px,2.6vw,24px);padding:18px 30px;border-radius:16px;cursor:pointer;font-family:inherit;box-shadow:0 10px 24px -8px rgba(66,99,235,.6);transition:transform .12s;}",
+      ".bt-pickbtn:hover{transform:translateY(-3px);}",
+      ".bt-hint{font-size:clamp(13px,1.7vw,16px);opacity:.75;line-height:1.6;margin-bottom:24px;word-break:keep-all;}",
+      ".bt-win{font-size:clamp(24px,4vw,40px);font-weight:900;color:#ffd43b;margin:6px 0 18px;}",
+      ".bt-reslist{max-width:420px;margin:0 auto 22px;}",
+      ".bt-res-row{display:flex;justify-content:space-between;align-items:center;border:2px solid;border-radius:12px;padding:12px 18px;margin-bottom:10px;background:rgba(255,255,255,.06);}",
+      ".bt-res-p{font-weight:900;font-size:clamp(18px,2.4vw,24px);}",
+      ".bt-res-score{font-weight:900;font-size:clamp(18px,2.4vw,24px);}",
+      ".bt-setbtns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}",
+      ".bt-vs{display:flex;align-items:center;justify-content:center;gap:22px;margin:6px 0 22px;font-weight:900;}",
+      ".bt-vs1{color:#ff6b6b;font-size:clamp(30px,4vw,46px);}",
+      ".bt-vs2{color:#4dabf7;font-size:clamp(30px,4vw,46px);}",
+      ".bt-vsx{color:#ffd43b;font-size:clamp(20px,2.6vw,30px);}"
     ].join("");
     document.head.appendChild(st);
   }
@@ -692,6 +744,82 @@
     }, 750);
   }
 
+  /* ---------- 대결 모드 (전자칠판 1대 · 2~4명) ---------- */
+  var BT_COLORS = ["#f03e3e", "#1c7ed6", "#2f9e44", "#f59f00"];
+  function startBattle() {
+    battleState = null;
+    var el = $("battleScreen"); el.classList.remove("hidden");
+    el.innerHTML =
+      '<div class="bt-setup"><div class="bt-title">⚔️ 1:1 대결</div>' +
+      '<div class="bt-sub">' + esc(REGION) + ' 방언 · 전자칠판에서 둘이 겨뤄요</div>' +
+      '<div class="bt-vs"><span class="bt-vs1">1P</span><span class="bt-vsx">VS</span><span class="bt-vs2">2P</span></div>' +
+      '<div class="bt-hint">💡 화면을 가로로 크게 하고, <b style="color:#f03e3e">왼쪽(빨강)</b>·<b style="color:#4dabf7">오른쪽(파랑)</b>에 서서 각자 A·B·C·D를 터치하세요! 먼저 맞히면 득점!</div>' +
+      '<div class="bt-setbtns"><button class="bt-pickbtn" id="btStartGo">⚔️ 대결 시작!</button><button class="bt-exit" id="btSetupExit">✕ 닫기</button></div></div>';
+    $("btStartGo").onclick = function () { battleBegin(2); };
+    $("btSetupExit").onclick = exitBattle;
+  }
+  function battleBegin(n) {
+    var qs = buildShuffled(BANK).slice(0, Math.min(10, BANK.length));
+    var players = []; for (var i = 0; i < n; i++) players.push({ score: 0, lock: false, win: false });
+    battleState = { n: n, players: players, qs: qs, current: 0, roundOver: false };
+    battleRender();
+  }
+  function battleRender() {
+    var s = battleState; if (!s) return; var q = s.qs[s.current];
+    var mk = ["A", "B", "C", "D"];
+    var opts = q.options.map(function (o, i) { var corr = s.roundOver && i === q.answer; return '<span class="bt-opt' + (corr ? " corr" : "") + '"><b>' + mk[i] + '</b> ' + esc(o) + '</span>'; }).join("");
+    var dia = q.dialogue.map(function (p) { return esc(p[0]) + ": " + esc(p[1]); }).join("  /  ");
+    var zones = s.players.map(function (pl, pi) {
+      var col = BT_COLORS[pi];
+      var btns = q.options.map(function (o, oi) { return '<button class="bt-btn" data-p="' + pi + '" data-o="' + oi + '" style="background:' + col + '"><span class="bl">' + mk[oi] + '</span><span class="bo">' + esc(o) + '</span></button>'; }).join("");
+      var cls = "bt-zone" + (pl.win ? " win" : "") + (pl.lock ? " lock" : "");
+      return '<div class="' + cls + '" style="border-color:' + col + '"><div class="bt-name" style="color:' + col + '">' + (pi + 1) + 'P' + (pl.win ? ' <span class="bt-winmark">🏆</span>' : "") + '<span class="bt-score">' + pl.score + '점</span></div><div class="bt-grid">' + btns + '</div></div>';
+    }).join("");
+    $("battleScreen").innerHTML =
+      '<div class="bt-top"><span class="bt-title2">⚔️ ' + esc(REGION) + ' 대결</span><span class="bt-count">' + (s.current + 1) + ' / ' + s.qs.length + '</span><button class="bt-exit" id="btExit">✕ 나가기</button></div>' +
+      '<div class="bt-q"><div class="bt-dia">💬 ' + dia + '</div><div class="bt-ask">' + esc(q.q) + '</div><div class="bt-opts">' + opts + '</div></div>' +
+      '<div class="bt-players p' + s.n + '">' + zones + '</div>';
+    $("btExit").onclick = exitBattle;
+    Array.prototype.forEach.call($("battleScreen").querySelectorAll(".bt-btn"), function (b) {
+      b.addEventListener("pointerdown", function (ev) { ev.preventDefault(); battleAnswer(+b.getAttribute("data-p"), +b.getAttribute("data-o")); });
+    });
+  }
+  function battleAnswer(pi, oi) {
+    var s = battleState; if (!s || s.roundOver) return;
+    var pl = s.players[pi]; if (pl.lock) return;
+    if (oi === s.qs[s.current].answer) {
+      pl.score++; pl.win = true; s.roundOver = true; playSound("correct"); battleRender();
+      setTimeout(battleNext, 1700);
+    } else {
+      pl.lock = true; playSound("wrong"); battleRender();
+      setTimeout(function () { pl.lock = false; if (s === battleState && !s.roundOver) battleRender(); }, 1000);
+    }
+  }
+  function battleNext() {
+    var s = battleState; if (!s) return;
+    s.current++;
+    if (s.current >= s.qs.length) { battleFinish(); return; }
+    s.roundOver = false; s.players.forEach(function (p) { p.win = false; p.lock = false; });
+    battleRender();
+  }
+  function battleFinish() {
+    var s = battleState; if (!s) return;
+    var max = Math.max.apply(null, s.players.map(function (p) { return p.score; }));
+    var winners = []; s.players.forEach(function (p, i) { if (p.score === max) winners.push(i + 1); });
+    var tie = winners.length > 1;
+    var rows = s.players.map(function (p, i) { return { p: i + 1, score: p.score, col: BT_COLORS[i] }; }).sort(function (a, b) { return b.score - a.score; });
+    var list = rows.map(function (r, i) { var medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : (i + 1) + "위"; return '<div class="bt-res-row" style="border-color:' + r.col + '"><span class="bt-res-p" style="color:' + r.col + '">' + medal + ' ' + r.p + 'P</span><span class="bt-res-score">' + r.score + '점</span></div>'; }).join("");
+    playSound("fanfare"); runConfetti();
+    $("battleScreen").innerHTML =
+      '<div class="bt-setup"><div class="bt-title">🏆 대결 결과</div>' +
+      '<div class="bt-win">' + (tie ? "공동 우승! " + winners.map(function (w) { return w + "P"; }).join(", ") : winners[0] + "P 우승! 🎉") + '</div>' +
+      '<div class="bt-reslist">' + list + '</div>' +
+      '<div class="bt-setbtns"><button class="bt-pickbtn" id="btAgain">⚔️ 다시 대결</button><button class="bt-exit" id="btFinExit">✕ 나가기</button></div></div>';
+    $("btAgain").onclick = startBattle;
+    $("btFinExit").onclick = exitBattle;
+  }
+  function exitBattle() { battleState = null; var el = $("battleScreen"); el.classList.add("hidden"); el.innerHTML = ""; showOnly("startScreen"); window.scrollTo({ top: 0 }); }
+
   /* ---------- 컨페티 ---------- */
   function runConfetti() {
     var cv = $("confetti"); cv.classList.remove("hidden"); var ctx = cv.getContext("2d"); cv.width = window.innerWidth; cv.height = window.innerHeight;
@@ -711,4 +839,5 @@
   updateDexBtn();
   updateBadgeBtn();
   detectRoomName();
+  try { if (new URLSearchParams(location.search).get("battle") === "1") startBattle(); } catch (e) {}
 })();

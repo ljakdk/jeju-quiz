@@ -96,6 +96,12 @@
   .dash-stat .ds-v{font-weight:900;font-size:22px;color:var(--accent);}
   .dash-stat .ds-l{font-size:12px;color:var(--gray);margin-top:3px;}
   .dash-sec{font-weight:800;color:var(--head);font-size:15px;margin:16px 0 10px;}
+  .battle-launch{background:linear-gradient(135deg,#343a40,#1a1d21)!important;box-shadow:0 8px 20px rgba(0,0,0,.25)!important;}
+  .battle-pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin:14px 0;}
+  .bp-btn{display:flex;flex-direction:column;align-items:center;gap:4px;padding:16px 8px;border:2px solid var(--line);border-radius:14px;background:var(--paper);color:var(--ink);cursor:pointer;font-family:inherit;transition:transform .12s;}
+  .bp-btn:hover{transform:translateY(-3px);}
+  .bp-emoji{font-size:30px;}
+  .bp-name{font-weight:800;color:var(--head);font-size:15px;}
 </style>
 
 <button id="themeBtn" class="theme-btn" title="다크모드 전환">🌙</button>
@@ -108,6 +114,8 @@
   </header>
 
   <div id="roomArea"></div>
+
+  <button class="btn battle-launch" id="battleLaunchBtn">⚔️ 대결 모드 · 전자칠판 1:1 (선생님)</button>
 
   <div class="sec-title" id="gridTitle">지역을 골라 풀어 보세요</div>
   <div class="grid" id="regionGrid"></div>
@@ -248,6 +256,15 @@ function showDashboard(){
     }).catch(function(){ document.getElementById("viewBody").innerHTML='<div class="t-sub">⚠️ 불러오지 못했어요.</div>'; });
 }
 
+/* 대결 모드 실행 (지역 선택 → 대결 화면으로 이동) */
+function showBattlePicker(){
+  openView();
+  document.getElementById("viewBody").innerHTML='<div class="t-title">⚔️ 대결 모드</div><div class="t-sub">전자칠판 1:1 대결 · 어느 지역으로 겨룰까요?</div>'+
+    '<div class="battle-pick">'+REGIONS.map(function(r){ return '<button class="bp-btn" data-file="'+r.file+'" style="border-color:'+r.c+'"><span class="bp-emoji">'+r.emoji+'</span><span class="bp-name">'+r.name+'</span></button>'; }).join("")+'</div>'+
+    '<div class="t-note">💡 지역을 고르면 대결 화면으로 넘어가요. 전자칠판을 가로로 크게 하고 둘이 겨뤄 보세요!</div>';
+  Array.prototype.forEach.call(document.getElementById("viewBody").querySelectorAll(".bp-btn"),function(b){ b.onclick=function(){ var f=b.getAttribute("data-file"); location.href=f+"?battle=1"+(currentRoom?"&room="+encodeURIComponent(currentRoom.code):""); }; });
+}
+
 /* 우리 반 소감 (전체) */
 function showBoard(){
   openView();
@@ -376,6 +393,7 @@ function updBgm(){ const b=$("bgmBtn"); if(b) b.textContent=bgmOn?"🔇 배경�
 /* ---- 다크모드 ---- */
 function applyTheme(t){ if(t==="dark") document.documentElement.setAttribute("data-theme","dark"); else document.documentElement.removeAttribute("data-theme"); $("themeBtn").textContent=(t==="dark")?"☀️":"🌙"; try{localStorage.setItem("dialectTheme",t);}catch(e){} }
 $("themeBtn").onclick=()=>applyTheme(document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark");
+$("battleLaunchBtn").onclick=showBattlePicker;
 $("doCreate").onclick=doCreate; $("cancelCreate").onclick=cancelCreate;
 
 /* ---- 시작 ---- */

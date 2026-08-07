@@ -141,11 +141,11 @@ input[type=text]:focus { border-color: var(--accent); box-shadow: 0 0 0 4px colo
 .qtext { font-size: 18px; font-weight: 700; color: var(--head); margin: 18px 0 16px; letter-spacing: -.3px; }
 .options { display: flex; flex-direction: column; gap: 11px; }
 .opt {
-  text-align: left; padding: 15px 17px; border: 1.5px solid var(--line); background: var(--paper);
-  border-radius: 14px; font-size: 16px; cursor: pointer; transition: border-color .15s, background .15s, transform .12s; font-family: inherit; color: var(--ink);
-  display: flex; gap: 13px; align-items: center;
+  text-align: left; padding: 17px 19px; border: 1.5px solid var(--line); background: var(--paper);
+  border-radius: 14px; font-size: 19px; cursor: pointer; transition: border-color .15s, background .15s, transform .12s; font-family: inherit; color: var(--ink);
+  display: flex; gap: 14px; align-items: center; font-weight: 600; line-height: 1.4; word-break: keep-all;
 }
-.opt .mk { width: 27px; height: 27px; flex: none; border-radius: 50%; border: 1.5px solid var(--line); display: grid; place-items: center; font-weight: 800; font-size: 13px; color: var(--gray); transition: .15s; }
+.opt .mk { width: 30px; height: 30px; flex: none; border-radius: 50%; border: 1.5px solid var(--line); display: grid; place-items: center; font-weight: 800; font-size: 15px; color: var(--gray); transition: .15s; }
 .opt:hover { border-color: var(--accent); transform: translateY(-1px); }
 .opt:hover .mk { border-color: var(--accent); color: var(--accent); }
 .opt.selected { border-color: var(--accent); background: var(--soft); background: color-mix(in srgb, var(--accent) 7%, var(--paper)); }

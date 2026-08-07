@@ -535,14 +535,14 @@
       ".bt-count{font-weight:800;font-size:clamp(14px,2vw,20px);opacity:.85;font-variant-numeric:tabular-nums;}",
       ".bt-exit{background:rgba(255,255,255,.16);border:none;color:#fff;font-weight:800;font-size:15px;padding:8px 16px;border-radius:10px;cursor:pointer;font-family:inherit;}",
       ".bt-exit:hover{background:rgba(255,255,255,.28);}",
-      ".bt-q{flex:none;text-align:center;padding:6px 8px 10px;}",
-      ".bt-q .bt-dia{font-size:clamp(14px,1.8vw,20px);opacity:.8;margin-bottom:4px;word-break:keep-all;}",
-      ".bt-q .bt-ask{font-size:clamp(20px,3vw,34px);font-weight:900;margin-bottom:8px;word-break:keep-all;}",
-      ".bt-q .bt-opts{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;}",
-      ".bt-q .bt-opt{background:rgba(255,255,255,.12);border-radius:10px;padding:6px 14px;font-size:clamp(14px,1.8vw,20px);font-weight:800;}",
+      ".bt-q{flex:1;display:flex;flex-direction:column;justify-content:center;text-align:center;padding:12px 18px;min-height:0;}",
+      ".bt-q .bt-dia{font-size:clamp(18px,2.4vw,32px);opacity:.82;margin-bottom:12px;word-break:keep-all;}",
+      ".bt-q .bt-ask{font-size:clamp(32px,5vw,62px);font-weight:900;margin-bottom:18px;word-break:keep-all;line-height:1.2;}",
+      ".bt-q .bt-opts{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;}",
+      ".bt-q .bt-opt{background:rgba(255,255,255,.13);border-radius:12px;padding:9px 20px;font-size:clamp(19px,2.6vw,32px);font-weight:800;}",
       ".bt-q .bt-opt b{color:#ffd43b;margin-right:4px;}",
       ".bt-q .bt-opt.corr{background:#2f9e44;box-shadow:0 0 20px rgba(47,158,68,.7);}",
-      ".bt-players{flex:1;display:grid;gap:12px;min-height:0;}",
+      ".bt-players{flex:none;height:44vh;display:grid;gap:14px;min-height:0;}",
       ".bt-players.p2{grid-template-columns:1fr 1fr;}",
       ".bt-players.p3{grid-template-columns:1fr 1fr 1fr;}",
       ".bt-players.p4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;}",
@@ -551,10 +551,10 @@
       ".bt-zone .bt-score{color:#fff;font-size:clamp(15px,2vw,22px);}",
       ".bt-winmark{font-size:26px;}",
       ".bt-grid{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:8px;min-height:0;}",
-      ".bt-btn{border:none;border-radius:12px;color:#fff;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px;transition:transform .07s,filter .12s;box-shadow:inset 0 -4px 0 rgba(0,0,0,.18);}",
-      ".bt-btn:active{transform:scale(.95);filter:brightness(1.15);}",
-      ".bt-btn .bl{font-weight:900;font-size:clamp(20px,3vw,34px);line-height:1;}",
-      ".bt-btn .bo{font-weight:700;font-size:clamp(11px,1.4vw,16px);opacity:.95;word-break:keep-all;text-align:center;line-height:1.15;}",
+      ".bt-btn{border:none;border-radius:14px;color:#2b3440;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:6px;transition:transform .07s,filter .12s;box-shadow:inset 0 -5px 0 rgba(0,0,0,.1);}",
+      ".bt-btn:active{transform:scale(.95);filter:brightness(1.06);}",
+      ".bt-btn .bl{font-weight:900;font-size:clamp(32px,4.6vw,58px);line-height:1;}",
+      ".bt-btn .bo{font-weight:800;font-size:clamp(18px,2.4vw,30px);opacity:.95;word-break:keep-all;text-align:center;line-height:1.2;}",
       ".bt-zone.win{box-shadow:0 0 0 4px #ffd43b,0 0 44px rgba(255,212,59,.6);}",
       ".bt-zone.lock{opacity:.4;}",
       ".bt-zone.lock .bt-btn{pointer-events:none;}",
@@ -573,8 +573,8 @@
       ".bt-res-score{font-weight:900;font-size:clamp(18px,2.4vw,24px);}",
       ".bt-setbtns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}",
       ".bt-vs{display:flex;align-items:center;justify-content:center;gap:22px;margin:6px 0 22px;font-weight:900;}",
-      ".bt-vs1{color:#ff6b6b;font-size:clamp(30px,4vw,46px);}",
-      ".bt-vs2{color:#4dabf7;font-size:clamp(30px,4vw,46px);}",
+      ".bt-vs1{color:#ef9a9a;font-size:clamp(30px,4vw,46px);}",
+      ".bt-vs2{color:#93bdf0;font-size:clamp(30px,4vw,46px);}",
       ".bt-vsx{color:#ffd43b;font-size:clamp(20px,2.6vw,30px);}"
     ].join("");
     document.head.appendChild(st);
@@ -745,7 +745,7 @@
   }
 
   /* ---------- 대결 모드 (전자칠판 1대 · 2~4명) ---------- */
-  var BT_COLORS = ["#f03e3e", "#1c7ed6", "#2f9e44", "#f59f00"];
+  var BT_COLORS = ["#ef9a9a", "#93bdf0", "#a8d5ba", "#f3d19b"];
   function startBattle() {
     battleState = null;
     var el = $("battleScreen"); el.classList.remove("hidden");
@@ -753,7 +753,7 @@
       '<div class="bt-setup"><div class="bt-title">⚔️ 1:1 대결</div>' +
       '<div class="bt-sub">' + esc(REGION) + ' 방언 · 전자칠판에서 둘이 겨뤄요</div>' +
       '<div class="bt-vs"><span class="bt-vs1">1P</span><span class="bt-vsx">VS</span><span class="bt-vs2">2P</span></div>' +
-      '<div class="bt-hint">💡 화면을 가로로 크게 하고, <b style="color:#f03e3e">왼쪽(빨강)</b>·<b style="color:#4dabf7">오른쪽(파랑)</b>에 서서 각자 A·B·C·D를 터치하세요! 먼저 맞히면 득점!</div>' +
+      '<div class="bt-hint">💡 화면을 가로로 크게 하고, <b style="color:#ef9a9a">왼쪽(빨강)</b>·<b style="color:#93bdf0">오른쪽(파랑)</b>에 서서 각자 A·B·C·D를 터치하세요! 먼저 맞히면 득점!</div>' +
       '<div class="bt-setbtns"><button class="bt-pickbtn" id="btStartGo">⚔️ 대결 시작!</button><button class="bt-exit" id="btSetupExit">✕ 닫기</button></div></div>';
     $("btStartGo").onclick = function () { battleBegin(2); };
     $("btSetupExit").onclick = exitBattle;

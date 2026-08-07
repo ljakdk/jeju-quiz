@@ -1,0 +1,190 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>우리나라 방언 퀴즈</title>
+<style>
+  :root { --accent:#4263eb; --accent-d:#3b5bdb; --accent2:#7048e8; --bg1:#fff4e6; --bg2:#e7f5ff;
+    --paper:#fff; --ink:#2b2b2b; --head:#263238; --gray:#7d868f; --line:#ececec; --shadow:0 10px 40px rgba(30,40,50,.13); }
+  :root[data-theme="dark"]{ --paper:#232a33; --ink:#e6e9ee; --head:#e8eef2; --gray:#9aa6b2; --line:#3a434e; --shadow:0 10px 40px rgba(0,0,0,.5); }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:"Apple SD Gothic Neo","Malgun Gothic","맑은 고딕",sans-serif;background:linear-gradient(160deg,var(--bg1),var(--bg2));color:var(--ink);min-height:100vh;padding:40px 18px 60px;display:flex;flex-direction:column;align-items:center;line-height:1.6;}
+  :root[data-theme="dark"] body{background:linear-gradient(160deg,#10151b,#0c1013);}
+  .wrap{width:100%;max-width:720px;}
+  .theme-btn{position:fixed;top:16px;right:16px;z-index:10;width:46px;height:46px;border-radius:50%;background:var(--paper);border:2px solid var(--line);box-shadow:var(--shadow);font-size:20px;cursor:pointer;display:grid;place-items:center;transition:transform .12s;}
+  .theme-btn:hover{transform:translateY(-2px) scale(1.05);}
+  header{text-align:center;margin-bottom:22px;}
+  header .flags{font-size:42px;letter-spacing:4px;}
+  header h1{font-size:31px;color:var(--head);margin-top:8px;letter-spacing:-.5px;}
+  header p{color:var(--gray);margin-top:10px;font-size:15px;word-break:keep-all;}
+  .btn{display:block;width:100%;padding:15px;font-size:17px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent-d));border:none;border-radius:14px;cursor:pointer;font-family:inherit;box-shadow:0 8px 20px rgba(0,0,0,.16);transition:transform .12s;margin-top:12px;}
+  .btn:hover{transform:translateY(-2px);}
+  .btn.ghost{background:var(--paper);color:var(--head);border:2px solid var(--line);box-shadow:none;}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:var(--shadow);margin-bottom:18px;}
+  .room-banner{background:var(--paper);border:1px solid var(--line);border-left:8px solid var(--accent);border-radius:16px;padding:16px 18px;box-shadow:var(--shadow);margin-bottom:18px;text-align:center;}
+  .room-banner b{color:var(--head);} .room-banner .code{color:var(--accent);font-weight:900;letter-spacing:1px;}
+  .room-banner .sub{color:var(--gray);font-size:13.5px;margin-top:4px;}
+  .field{margin-top:14px;text-align:left;} .field label{font-weight:700;font-size:14.5px;color:var(--head);display:block;margin-bottom:8px;}
+  .field .tag{font-weight:600;font-size:12px;color:var(--gray);}
+  .field input{width:100%;padding:13px 15px;font-size:15px;font-family:inherit;border:2px solid var(--line);border-radius:12px;outline:none;background:var(--paper);color:var(--ink);}
+  :root[data-theme="dark"] .field input{background:#1b212a;}
+  .field input:focus{border-color:var(--accent);}
+  .status{font-size:13.5px;font-weight:700;margin-top:12px;color:var(--accent2);word-break:keep-all;} .status:empty{display:none;} .status.warn{color:#e03131;}
+  .made{text-align:center;font-weight:800;color:#2f9e44;margin:4px 0 6px;}
+  .code-big{text-align:center;font-size:34px;font-weight:900;color:var(--head);letter-spacing:3px;margin:6px 0 14px;}
+  .qr{display:block;margin:0 auto 12px;border-radius:12px;background:#fff;width:220px;height:220px;max-width:100%;}
+  .linkbox{display:flex;gap:8px;} .linkbox input{flex:1;min-width:0;padding:11px 13px;font-size:13px;border:2px solid var(--line);border-radius:12px;font-family:inherit;background:#fafafa;color:var(--ink);}
+  :root[data-theme="dark"] .linkbox input{background:#1b212a;}
+  .linkbox .btn{width:auto;margin-top:0;padding:11px 15px;font-size:14px;white-space:nowrap;}
+  .sec-title{font-weight:800;color:var(--head);font-size:16px;margin:6px 0 12px;text-align:center;}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px;}
+  @media(max-width:560px){.grid{grid-template-columns:1fr;}header h1{font-size:26px;}}
+  .region{display:block;text-decoration:none;color:inherit;background:var(--paper);border:1px solid var(--line);border-left:8px solid var(--c);border-radius:18px;padding:18px 18px 16px;box-shadow:var(--shadow);transition:transform .14s;}
+  .region:hover{transform:translateY(-4px);}
+  .region .top{display:flex;align-items:center;gap:12px;}
+  .region .emoji{font-size:32px;} .region .name{font-size:20px;font-weight:900;color:var(--head);}
+  .region .badge{margin-left:auto;font-size:12px;font-weight:800;color:#fff;background:var(--c);border-radius:99px;padding:4px 10px;}
+  .region .desc{margin-top:10px;font-size:13.5px;color:var(--gray);word-break:keep-all;}
+  .region .go{margin-top:12px;font-weight:800;font-size:14px;color:var(--c);}
+  footer{text-align:center;color:var(--gray);font-size:13px;margin-top:26px;line-height:1.7;word-break:keep-all;}
+  .hidden{display:none;}
+</style>
+
+<button id="themeBtn" class="theme-btn" title="다크모드 전환">🌙</button>
+
+<div class="wrap">
+  <header>
+    <div class="flags">🍊🌊🌾🏞️⛰️</div>
+    <h1>우리나라 방언 퀴즈</h1>
+    <p>선생님이 학급 방을 만들어 공유하면, 학생들이 여러 지역 방언을 함께 풀고 랭킹·게시판을 나눌 수 있어요.</p>
+  </header>
+
+  <div id="roomArea"></div>
+
+  <div class="sec-title" id="gridTitle">지역을 골라 풀어 보세요</div>
+  <div class="grid" id="regionGrid"></div>
+
+  <!-- 방 만들기 화면 -->
+  <div id="createScreen" class="card hidden">
+    <div class="sec-title">🏫 학급 방 만들기</div>
+    <div id="createForm">
+      <div class="field"><label for="roomName">학급 이름</label><input id="roomName" type="text" placeholder="예) 5학년 1반" maxlength="30" autocomplete="off"></div>
+      <div class="field"><label for="roomPw">비밀번호 <span class="tag">(선생님 관리용 · 점수 초기화에 필요)</span></label><input id="roomPw" type="text" placeholder="기억하기 쉬운 비밀번호" maxlength="30" autocomplete="off"></div>
+      <div class="status" id="createStatus"></div>
+      <button class="btn" id="doCreate">방 만들기</button>
+      <button class="btn ghost" id="cancelCreate">← 돌아가기</button>
+    </div>
+    <div id="createResult" class="hidden"></div>
+  </div>
+
+  <footer>방언 표현은 지역·세대에 따라 다를 수 있어요. 재미있게 즐겨 주세요! 🙂</footer>
+</div>
+
+<script>
+const SUPABASE_URL = "https://zxdxdqsutsvnbplqaefx.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp4ZHhkcXN1dHN2bmJwbHFhZWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5NjQyMTQsImV4cCI6MjEwMTU0MDIxNH0.Xv5l9F8696UYIxmcNltJwDtz_VS9aBp2hYfEvhjl33U";
+const HDRJ = { apikey:SUPABASE_ANON_KEY, Authorization:"Bearer "+SUPABASE_ANON_KEY, "Content-Type":"application/json" };
+const $ = id => document.getElementById(id);
+const esc = s => String(s==null?"":s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
+function rpc(fn,p){ return fetch(SUPABASE_URL+"/rest/v1/rpc/"+fn,{method:"POST",headers:HDRJ,body:JSON.stringify(p)}).then(r=>r.ok?r.json():Promise.reject(r.status)); }
+
+const REGIONS = [
+  { name:"제주", emoji:"🍊", c:"#f4712e", file:"제주도방언퀴즈.html", desc:"하르방·혼저·지슬·올레·오름…" },
+  { name:"경상도", emoji:"🌊", c:"#e03131", file:"경상도방언퀴즈.html", desc:"정구지·단디·억수로·개안타…" },
+  { name:"전라도", emoji:"🌾", c:"#2f9e44", file:"전라도방언퀴즈.html", desc:"거시기·시방·겁나게·짠하다…" },
+  { name:"충청도", emoji:"🏞️", c:"#3b5bdb", file:"충청도방언퀴즈.html", desc:"겨·워디·을매·지둘러…" },
+  { name:"강원도", emoji:"⛰️", c:"#099268", file:"강원도방언퀴즈.html", desc:"마카·옥시기·감재·새첩다…" }
+];
+
+/* ---- 방 상태 (URL ?room + localStorage) ---- */
+let currentRoom = null;
+(function(){
+  let code=null; try{ code=new URLSearchParams(location.search).get("room"); }catch(e){}
+  if(!code){ try{ code=localStorage.getItem("krRoomCode"); }catch(e){} }
+  if(code){ code=code.toUpperCase(); let nm=code; try{ const s=JSON.parse(localStorage.getItem("krRoom")||"null"); if(s&&s.code===code) nm=s.name; }catch(e){} currentRoom={code,name:nm}; try{localStorage.setItem("krRoomCode",code);}catch(e){} }
+})();
+function roomQS(){ return currentRoom ? ("?room="+encodeURIComponent(currentRoom.code)) : ""; }
+
+function renderRegions(){
+  $("regionGrid").innerHTML = REGIONS.map(r =>
+    '<a class="region" style="--c:'+r.c+'" href="'+r.file+roomQS()+'">'+
+    '<div class="top"><span class="emoji">'+r.emoji+'</span><span class="name">'+r.name+'</span><span class="badge">30문제</span></div>'+
+    '<div class="desc">'+r.desc+'</div><div class="go">풀러 가기 →</div></a>').join("");
+}
+function renderRoomArea(){
+  const a=$("roomArea");
+  if(currentRoom){
+    a.innerHTML='<div class="room-banner">🏫 <b>'+esc(currentRoom.name)+'</b> 방에 입장했어요 <span class="code">'+esc(currentRoom.code)+'</span>'+
+      '<div class="sub">아래 지역을 골라 풀면 우리 반 랭킹·게시판에 함께 쌓여요.</div>'+
+      '<button class="btn ghost" id="leaveRoom" style="max-width:200px;margin:12px auto 0;">방 나가기</button></div>';
+    $("leaveRoom").onclick=leaveRoom;
+    $("gridTitle").textContent="지역을 골라 우리 반과 함께 풀어 보세요";
+  } else {
+    a.innerHTML='<button class="btn" id="openCreate">🏫 학급 방 만들기 (선생님)</button>';
+    $("openCreate").onclick=openCreate;
+    $("gridTitle").textContent="지역을 골라 풀어 보세요 (방 없이 연습도 가능)";
+  }
+}
+function leaveRoom(){ currentRoom=null; try{ localStorage.removeItem("krRoomCode"); localStorage.removeItem("krRoom"); }catch(e){} try{ history.replaceState(null,"",location.pathname); }catch(e){} renderRoomArea(); renderRegions(); }
+
+/* ---- 방 만들기 ---- */
+let createdRoom=null, lastQr="";
+function openCreate(){ ensureBgm(); createdRoom=null; $("roomName").value=""; $("roomPw").value=""; $("createStatus").textContent=""; $("createForm").classList.remove("hidden"); $("createResult").classList.add("hidden"); $("createResult").innerHTML=""; $("createScreen").classList.remove("hidden"); $("createScreen").scrollIntoView({behavior:"smooth"}); }
+function cancelCreate(){ stopBgm(); $("createScreen").classList.add("hidden"); }
+async function doCreate(){
+  ensureBgm();
+  const name=$("roomName").value.trim(), pw=$("roomPw").value.trim();
+  if(!name||!pw){ setCS("학급 이름과 비밀번호를 모두 입력하세요.","warn"); return; }
+  setCS("⏳ 방 만드는 중…","");
+  try{ const code=await rpc("create_room_kr",{p_name:name,p_password:pw}); createdRoom={code:String(code).toUpperCase(),name}; showCreated(); }
+  catch(e){ setCS("⚠️ 방 만들기 실패 — 인터넷/설정을 확인하세요.","warn"); }
+}
+function setCS(m,k){ const el=$("createStatus"); el.textContent=m; el.className="status "+(k||""); }
+function roomLink(code){ return location.origin+location.pathname+"?room="+encodeURIComponent(code); }
+function showCreated(){
+  const link=roomLink(createdRoom.code);
+  lastQr="https://api.qrserver.com/v1/create-qr-code/?size=440x440&margin=12&data="+encodeURIComponent(link);
+  $("createForm").classList.add("hidden");
+  $("createResult").classList.remove("hidden");
+  $("createResult").innerHTML=
+    '<div class="made">✅ <b>'+esc(createdRoom.name)+'</b> 방이 만들어졌어요!</div>'+
+    '<div class="code-big">'+esc(createdRoom.code)+'</div>'+
+    '<img class="qr" src="'+lastQr+'" alt="방 입장 QR">'+
+    '<button class="btn ghost" id="dlQr">📥 QR 이미지 저장</button>'+
+    '<div class="linkbox" style="margin-top:12px"><input id="linkInput" type="text" readonly value="'+esc(link)+'"><button class="btn ghost" id="copyLink">복사</button></div>'+
+    '<div class="status" id="shareHint">이 링크나 QR을 학생들에게 공유하세요. 비밀번호는 점수 초기화 때 필요하니 기억해 두세요.</div>'+
+    '<button class="btn ghost" id="bgmBtn" style="margin-top:14px">🔇 배경음악 끄기</button>'+
+    '<button class="btn" id="enterRoom" style="margin-top:10px">이 방으로 입장</button>';
+  $("dlQr").onclick=downloadQr; $("copyLink").onclick=copyLink; $("bgmBtn").onclick=toggleBgm; $("enterRoom").onclick=enterCreated;
+  startBgm();
+}
+async function downloadQr(){
+  const fn="방언퀴즈_"+(createdRoom?createdRoom.code:"방")+"_QR.png";
+  try{ const b=await (await fetch(lastQr)).blob(); const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download=fn; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000); $("shareHint").textContent="✅ QR 이미지를 저장했어요!"; }
+  catch(e){ window.open(lastQr,"_blank"); $("shareHint").textContent="QR을 새 탭에서 열었어요. 이미지를 저장하세요."; }
+}
+async function copyLink(){ try{ await navigator.clipboard.writeText($("linkInput").value); $("shareHint").textContent="✅ 링크를 복사했어요!"; }catch(e){ $("linkInput").select(); } }
+function enterCreated(){ stopBgm(); currentRoom=createdRoom; try{ localStorage.setItem("krRoomCode",currentRoom.code); localStorage.setItem("krRoom",JSON.stringify(currentRoom)); history.replaceState(null,"",roomLink(currentRoom.code)); }catch(e){} $("createScreen").classList.add("hidden"); renderRoomArea(); renderRegions(); window.scrollTo({top:0,behavior:"smooth"}); }
+
+/* ---- 배경음악(합성 루프) ---- */
+let bgmCtx=null,bgmGain=null,bgmTimer=null,bgmOn=false;
+function ensureBgm(){ try{ bgmCtx=bgmCtx||new (window.AudioContext||window.webkitAudioContext)(); if(bgmCtx.state==="suspended") bgmCtx.resume(); }catch(e){} }
+function bgmNote(f,at,d,ty,v){ const o=bgmCtx.createOscillator(),g=bgmCtx.createGain(); o.type=ty||"square"; o.frequency.value=f; g.gain.setValueAtTime(0.0001,at); g.gain.exponentialRampToValueAtTime(v||0.4,at+0.02); g.gain.exponentialRampToValueAtTime(0.0001,at+d); o.connect(g); g.connect(bgmGain); o.start(at); o.stop(at+d+0.03); }
+function scheduleBgm(){ if(!bgmOn||!bgmCtx) return; const bars=[{b:130.81,a:[261.63,329.63,392.00,523.25]},{b:98,a:[196,246.94,293.66,392]},{b:110,a:[220,261.63,329.63,440]},{b:87.31,a:[174.61,220,261.63,349.23]}]; const step=0.16, now=bgmCtx.currentTime+0.05; bars.forEach((bar,bi)=>{ const t0=bi*4*step; bgmNote(bar.b,now+t0,0.55,"triangle",0.5); bar.a.forEach((f,ai)=>bgmNote(f,now+t0+ai*step,0.14,"square",0.32)); }); bgmTimer=setTimeout(scheduleBgm,bars.length*4*step*1000); }
+function startBgm(){ if(bgmOn) return; ensureBgm(); if(!bgmCtx) return; if(!bgmGain){ bgmGain=bgmCtx.createGain(); bgmGain.connect(bgmCtx.destination); } bgmGain.gain.cancelScheduledValues(bgmCtx.currentTime); bgmGain.gain.setValueAtTime(0.12,bgmCtx.currentTime); bgmOn=true; scheduleBgm(); updBgm(); }
+function stopBgm(){ bgmOn=false; if(bgmTimer){ clearTimeout(bgmTimer); bgmTimer=null; } if(bgmGain&&bgmCtx){ try{ bgmGain.gain.setTargetAtTime(0.0001,bgmCtx.currentTime,0.12); }catch(e){} } updBgm(); }
+function toggleBgm(){ bgmOn?stopBgm():startBgm(); }
+function updBgm(){ const b=$("bgmBtn"); if(b) b.textContent=bgmOn?"🔇 배경음악 끄기":"🎵 배경음악 켜기"; }
+
+/* ---- 다크모드 ---- */
+function applyTheme(t){ if(t==="dark") document.documentElement.setAttribute("data-theme","dark"); else document.documentElement.removeAttribute("data-theme"); $("themeBtn").textContent=(t==="dark")?"☀️":"🌙"; try{localStorage.setItem("dialectTheme",t);}catch(e){} }
+$("themeBtn").onclick=()=>applyTheme(document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark");
+$("doCreate").onclick=doCreate; $("cancelCreate").onclick=cancelCreate;
+
+/* ---- 시작 ---- */
+(function init(){
+  let th="light"; try{ th=localStorage.getItem("dialectTheme")||"light"; }catch(e){}
+  applyTheme(th);
+  renderRoomArea(); renderRegions();
+  // 방 이름 확인(링크로 들어온 경우)
+  if(currentRoom){ rpc("get_room_kr",{p_code:currentRoom.code}).then(name=>{ if(name){ currentRoom.name=name; try{localStorage.setItem("krRoom",JSON.stringify(currentRoom));}catch(e){} renderRoomArea(); renderRegions(); } else { leaveRoom(); } }).catch(()=>{}); }
+})();
+</script>

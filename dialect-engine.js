@@ -55,6 +55,7 @@
   /* ---------- 화면 구성 ---------- */
   function build() {
     injectCSS();
+    injectClouds();
     var nav = REGIONS.map(function (r) {
       var active = r.name === REGION ? " active" : "";
       return '<a class="dnav-link' + active + '" href="' + r.file + roomQS() + '">' + r.name + '</a>';
@@ -604,9 +605,23 @@
       ".dev-credit a:hover{color:var(--accent);border-bottom-color:var(--accent);}",
       ".memo-btns{display:flex;gap:6px;align-items:center;}",
       ".memo-del{border:1px solid var(--line);background:var(--paper);border-radius:99px;padding:3px 9px;font-size:12.5px;color:var(--gray);cursor:pointer;font-family:inherit;opacity:.7;transition:.15s;}",
-      ".memo-del:hover{opacity:1;border-color:#e03131;color:#e03131;}"
+      ".memo-del:hover{opacity:1;border-color:#e03131;color:#e03131;}",
+      ".cloud-bg{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;}",
+      ".cloud{position:absolute;left:-18vw;width:92px;height:30px;background:#fff;border-radius:100px;animation:cloudDrift linear infinite;will-change:left;}",
+      ".cloud::before{content:'';position:absolute;background:#fff;width:46px;height:46px;border-radius:50%;top:-20px;left:13px;}",
+      ".cloud::after{content:'';position:absolute;background:#fff;width:32px;height:32px;border-radius:50%;top:-12px;right:15px;}",
+      "@keyframes cloudDrift{from{left:-18vw;}to{left:118vw;}}",
+      ":root[data-theme=\"dark\"] .cloud{opacity:.13 !important;}",
+      "@media (prefers-reduced-motion:reduce){.cloud{animation:none;display:none;}}"
     ].join("");
     document.head.appendChild(st);
+  }
+  function injectClouds() {
+    if (document.querySelector(".cloud-bg")) return;
+    var wrap = document.createElement("div"); wrap.className = "cloud-bg"; wrap.setAttribute("aria-hidden", "true");
+    var conf = [[9, 0.8, 48, -5, 0.55], [23, 1.15, 64, -26, 0.5], [41, 0.62, 40, -13, 0.6], [59, 0.95, 56, -33, 0.5], [73, 0.72, 44, -19, 0.58], [86, 1.05, 70, -9, 0.48]];
+    wrap.innerHTML = conf.map(function (c) { return '<div class="cloud" style="top:' + c[0] + '%;transform:scale(' + c[1] + ');animation-duration:' + c[2] + 's;animation-delay:' + c[3] + 's;opacity:' + c[4] + ';"></div>'; }).join("");
+    document.body.appendChild(wrap);
   }
 
   /* ---------- 토스트 알림 ---------- */

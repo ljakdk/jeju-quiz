@@ -127,7 +127,7 @@
 
       '<div id="delReflModal" class="modal-overlay hidden"><div class="modal"><div class="m-emoji">🗑️</div>' +
         '<p>이 게시글을 삭제할까요?<br>비밀번호를 입력하세요.</p>' +
-        '<input id="delReflPw" type="password" class="reset-input" placeholder="방 비밀번호">' +
+        '<input id="delReflPw" type="text" class="reset-input" placeholder="방 비밀번호" autocomplete="off">' +
         '<div class="rank-status" id="delReflStatus"></div>' +
         '<div class="modal-btns"><button class="btn ghost" id="delReflCancel">취소</button><button class="btn" id="delReflGo">삭제</button></div></div></div>' +
 

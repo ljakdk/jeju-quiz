@@ -607,11 +607,11 @@
       ".memo-del{border:1px solid var(--line);background:var(--paper);border-radius:99px;padding:3px 9px;font-size:12.5px;color:var(--gray);cursor:pointer;font-family:inherit;opacity:.7;transition:.15s;}",
       ".memo-del:hover{opacity:1;border-color:#e03131;color:#e03131;}",
       ".cloud-bg{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;}",
-      ".cloud{position:absolute;left:-18vw;width:92px;height:30px;background:#fff;border-radius:100px;animation:cloudDrift linear infinite;will-change:left;}",
-      ".cloud::before{content:'';position:absolute;background:#fff;width:46px;height:46px;border-radius:50%;top:-20px;left:13px;}",
-      ".cloud::after{content:'';position:absolute;background:#fff;width:32px;height:32px;border-radius:50%;top:-12px;right:15px;}",
-      "@keyframes cloudDrift{from{left:-18vw;}to{left:118vw;}}",
-      ":root[data-theme=\"dark\"] .cloud{opacity:.13 !important;}",
+      ".cloud{position:absolute;left:-22vw;width:134px;height:44px;background:#bcd7f0;border-radius:100px;animation:cloudDrift linear infinite;will-change:left;}",
+      ".cloud::before{content:'';position:absolute;background:#bcd7f0;width:66px;height:66px;border-radius:50%;top:-30px;left:18px;}",
+      ".cloud::after{content:'';position:absolute;background:#bcd7f0;width:46px;height:46px;border-radius:50%;top:-18px;right:20px;}",
+      "@keyframes cloudDrift{from{left:-22vw;}to{left:120vw;}}",
+      ":root[data-theme=\"dark\"] .cloud{opacity:.22 !important;}",
       "@media (prefers-reduced-motion:reduce){.cloud{animation:none;display:none;}}"
     ].join("");
     document.head.appendChild(st);
@@ -619,7 +619,7 @@
   function injectClouds() {
     if (document.querySelector(".cloud-bg")) return;
     var wrap = document.createElement("div"); wrap.className = "cloud-bg"; wrap.setAttribute("aria-hidden", "true");
-    var conf = [[9, 0.8, 48, -5, 0.55], [23, 1.15, 64, -26, 0.5], [41, 0.62, 40, -13, 0.6], [59, 0.95, 56, -33, 0.5], [73, 0.72, 44, -19, 0.58], [86, 1.05, 70, -9, 0.48]];
+    var conf = [[8, 0.95, 48, -5, 0.8], [22, 1.3, 64, -26, 0.72], [40, 0.78, 40, -13, 0.85], [58, 1.1, 56, -33, 0.72], [72, 0.88, 44, -19, 0.8], [86, 1.2, 70, -9, 0.68]];
     wrap.innerHTML = conf.map(function (c) { return '<div class="cloud" style="top:' + c[0] + '%;transform:scale(' + c[1] + ');animation-duration:' + c[2] + 's;animation-delay:' + c[3] + 's;opacity:' + c[4] + ';"></div>'; }).join("");
     document.body.appendChild(wrap);
   }

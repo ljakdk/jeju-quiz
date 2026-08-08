@@ -125,7 +125,8 @@
         '<div class="modal-btns"><button class="btn ghost" id="resetCancel">취소</button><button class="btn" id="resetGo">초기화</button></div></div></div>' +
 
       '<div id="battleScreen" class="battle-screen hidden"></div>' +
-      '<canvas id="confetti" class="confetti-canvas hidden"></canvas>';
+      '<canvas id="confetti" class="confetti-canvas hidden"></canvas>' +
+      '<div class="dev-credit"><a href="https://www.instagram.com/ggagossam/" target="_blank" rel="noopener">Designed &amp; Developed by 까망이고동이</a></div>';
 
     $("themeBtn").onclick = toggleTheme;
     $("startBtn").onclick = startQuiz;
@@ -575,7 +576,10 @@
       ".bt-vs{display:flex;align-items:center;justify-content:center;gap:22px;margin:6px 0 22px;font-weight:900;}",
       ".bt-vs1{color:#ef9a9a;font-size:clamp(30px,4vw,46px);}",
       ".bt-vs2{color:#93bdf0;font-size:clamp(30px,4vw,46px);}",
-      ".bt-vsx{color:#ffd43b;font-size:clamp(20px,2.6vw,30px);}"
+      ".bt-vsx{color:#ffd43b;font-size:clamp(20px,2.6vw,30px);}",
+      ".dev-credit{text-align:center;color:var(--gray);font-size:11.5px;margin:18px 0 4px;letter-spacing:.3px;opacity:.75;}",
+      ".dev-credit a{color:inherit;text-decoration:none;border-bottom:1px dotted currentColor;padding-bottom:1px;transition:color .15s,border-color .15s;}",
+      ".dev-credit a:hover{color:var(--accent);border-bottom-color:var(--accent);}"
     ].join("");
     document.head.appendChild(st);
   }

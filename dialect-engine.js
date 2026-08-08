@@ -124,6 +124,12 @@
         '<div class="rank-status" id="resetStatus"></div>' +
         '<div class="modal-btns"><button class="btn ghost" id="resetCancel">취소</button><button class="btn" id="resetGo">초기화</button></div></div></div>' +
 
+      '<div id="delReflModal" class="modal-overlay hidden"><div class="modal"><div class="m-emoji">🗑️</div>' +
+        '<p>이 배운 점(소감)을 삭제할까요?<br>선생님 비밀번호(방 비밀번호)를 입력하세요.</p>' +
+        '<input id="delReflPw" type="password" class="reset-input" placeholder="방 비밀번호">' +
+        '<div class="rank-status" id="delReflStatus"></div>' +
+        '<div class="modal-btns"><button class="btn ghost" id="delReflCancel">취소</button><button class="btn" id="delReflGo">삭제</button></div></div></div>' +
+
       '<div id="battleScreen" class="battle-screen hidden"></div>' +
       '<canvas id="confetti" class="confetti-canvas hidden"></canvas>' +
       '<div class="dev-credit"><a href="https://www.instagram.com/ggagossam/" target="_blank" rel="noopener">Designed &amp; Developed by 까망이고동이</a></div>';
@@ -152,6 +158,9 @@
     $("learnSubmit").onclick = submitLearn;
     $("resetCancel").onclick = function () { $("resetModal").classList.add("hidden"); };
     $("resetGo").onclick = doResetRoom;
+    $("delReflCancel").onclick = function () { $("delReflModal").classList.add("hidden"); };
+    $("delReflGo").onclick = doDelRefl;
+    $("delReflModal").addEventListener("click", function (e) { if (e.target.id === "delReflModal") this.classList.add("hidden"); });
 
     document.addEventListener("keydown", function (e) {
       if ($("quizScreen").classList.contains("hidden")) return;
@@ -377,14 +386,27 @@
   }
   function isLiked(id) { try { return JSON.parse(localStorage.getItem("krLikes") || "[]").indexOf(id) >= 0; } catch (e) { return false; } }
   function addLiked(id) { try { var a = JSON.parse(localStorage.getItem("krLikes") || "[]"); if (a.indexOf(id) < 0) { a.push(id); localStorage.setItem("krLikes", JSON.stringify(a)); } } catch (e) {} }
+  var delReflId = null, teacherReflPw = "";
+  function askDelRefl(id) { delReflId = id; $("delReflPw").value = teacherReflPw; $("delReflStatus").textContent = ""; $("delReflModal").classList.remove("hidden"); }
+  function doDelRefl() {
+    var pw = $("delReflPw").value.trim(), st = $("delReflStatus");
+    if (!pw) { st.textContent = "비밀번호를 입력하세요."; return; }
+    if (!currentRoom) { st.textContent = "방 정보가 없어요."; return; }
+    st.textContent = "⏳ 삭제 중…";
+    rpc("delete_reflection_kr", { p_id: delReflId, p_room: currentRoom.code, p_password: pw }).then(function (n) {
+      if (n === -1) { st.textContent = "비밀번호가 틀렸어요."; return; }
+      teacherReflPw = pw; $("delReflModal").classList.add("hidden"); loadReflections();
+    }).catch(function () { st.textContent = "실패 — 다시 시도해 주세요."; });
+  }
   function renderReflections(rows) {
     var list = $("learnList");
     if (!Array.isArray(rows) || !rows.length) { list.innerHTML = '<div class="rank-empty">아직 올라온 글이 없어요. 첫 글을 남겨보세요! 🙂</div>'; return; }
     list.innerHTML = '<div class="list-count">총 ' + rows.length + '개의 글</div>' + rows.map(function (r) {
       var liked = isLiked(r.id);
-      return '<div class="memo-post"><div class="memo-post-head"><span class="memo-post-name">🙋 ' + esc(r.name) + '</span><button class="like-btn ' + (liked ? "liked" : "") + '" ' + (liked ? "disabled" : "") + ' data-id="' + r.id + '">❤️ <span>' + (r.likes || 0) + '</span></button></div><div class="memo-post-text">' + esc(r.text) + '</div></div>';
+      return '<div class="memo-post"><div class="memo-post-head"><span class="memo-post-name">🙋 ' + esc(r.name) + '</span><span class="memo-btns"><button class="like-btn ' + (liked ? "liked" : "") + '" ' + (liked ? "disabled" : "") + ' data-id="' + r.id + '">❤️ <span>' + (r.likes || 0) + '</span></button><button class="memo-del" data-id="' + r.id + '" title="선생님 삭제">🗑️</button></span></div><div class="memo-post-text">' + esc(r.text) + '</div></div>';
     }).join("");
     Array.prototype.forEach.call(list.querySelectorAll(".like-btn"), function (b) { b.onclick = function () { likeReflection(+b.getAttribute("data-id"), b); }; });
+    Array.prototype.forEach.call(list.querySelectorAll(".memo-del"), function (b) { b.onclick = function () { askDelRefl(+b.getAttribute("data-id")); }; });
   }
   function likeReflection(id, btn) { if (isLiked(id)) return; addLiked(id); if (btn) { btn.disabled = true; btn.classList.add("liked"); } rpc("like_reflection_kr", { p_id: id }).then(function (n) { if (btn && typeof n === "number") { var s = btn.querySelector("span"); if (s) s.textContent = n; } }).catch(function () {}); }
 
@@ -579,7 +601,10 @@
       ".bt-vsx{color:#ffd43b;font-size:clamp(20px,2.6vw,30px);}",
       ".dev-credit{text-align:center;color:var(--gray);font-size:11.5px;margin:18px 0 4px;letter-spacing:.3px;opacity:.75;}",
       ".dev-credit a{color:inherit;text-decoration:none;border-bottom:1px dotted currentColor;padding-bottom:1px;transition:color .15s,border-color .15s;}",
-      ".dev-credit a:hover{color:var(--accent);border-bottom-color:var(--accent);}"
+      ".dev-credit a:hover{color:var(--accent);border-bottom-color:var(--accent);}",
+      ".memo-btns{display:flex;gap:6px;align-items:center;}",
+      ".memo-del{border:1px solid var(--line);background:var(--paper);border-radius:99px;padding:3px 9px;font-size:12.5px;color:var(--gray);cursor:pointer;font-family:inherit;opacity:.7;transition:.15s;}",
+      ".memo-del:hover{opacity:1;border-color:#e03131;color:#e03131;}"
     ].join("");
     document.head.appendChild(st);
   }

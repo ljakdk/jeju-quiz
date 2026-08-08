@@ -470,10 +470,11 @@
   @media (prefers-reduced-motion:reduce){.cloud{animation:none;display:none;}}
   /* 제주 오름·한라산 실루엣 (하단 배경) */
   .jeju-scape{position:fixed;left:0;right:0;bottom:0;z-index:-1;pointer-events:none;line-height:0;}
-  .jeju-scape svg{display:block;width:100%;height:min(230px,30vh);}
+  .jeju-scape .hills{display:block;width:100%;height:min(235px,32vh);}
   .jeju-scape .hill-back{fill:#d4ead0;}
   .jeju-scape .hill-front{fill:#c2e0b8;}
-  :root[data-theme="dark"] .jeju-scape{opacity:.35;}
+  .jeju-scape .deco{position:absolute;}
+  :root[data-theme="dark"] .jeju-scape{opacity:.4;}
 </style>
 
 <div class="cloud-bg" aria-hidden="true">
@@ -486,9 +487,9 @@
 </div>
 
 <div class="jeju-scape" aria-hidden="true">
-  <svg viewBox="0 0 1440 240" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-    <path class="hill-back" d="M0,240 V150 C160,110 300,112 430,140 C520,160 560,70 665,70 C770,70 825,150 945,138 C1085,124 1205,120 1320,150 C1385,167 1420,162 1440,158 V240 Z"/>
-    <path class="hill-front" d="M0,240 V190 C120,160 260,170 385,188 C485,202 625,150 725,158 C825,166 905,205 1045,193 C1165,183 1305,182 1440,200 V240 Z"/>
+  <svg class="hills" viewBox="0 0 1440 240" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <path class="hill-back" d="M0,240 V170 C90,158 150,84 270,92 C380,99 440,158 560,152 C650,147 700,42 830,48 C960,54 1010,132 1150,142 C1270,150 1350,104 1440,120 V240 Z"/>
+    <path class="hill-front" d="M0,240 V202 C110,186 230,196 350,208 C460,218 545,176 675,182 C795,187 885,214 1030,204 C1165,195 1310,198 1440,212 V240 Z"/>
   </svg>
 </div>
 

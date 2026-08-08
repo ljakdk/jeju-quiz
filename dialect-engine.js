@@ -126,7 +126,7 @@
         '<div class="modal-btns"><button class="btn ghost" id="resetCancel">취소</button><button class="btn" id="resetGo">초기화</button></div></div></div>' +
 
       '<div id="delReflModal" class="modal-overlay hidden"><div class="modal"><div class="m-emoji">🗑️</div>' +
-        '<p>이 배운 점(소감)을 삭제할까요?<br>선생님 비밀번호(방 비밀번호)를 입력하세요.</p>' +
+        '<p>이 게시글을 삭제할까요?<br>비밀번호를 입력하세요.</p>' +
         '<input id="delReflPw" type="password" class="reset-input" placeholder="방 비밀번호">' +
         '<div class="rank-status" id="delReflStatus"></div>' +
         '<div class="modal-btns"><button class="btn ghost" id="delReflCancel">취소</button><button class="btn" id="delReflGo">삭제</button></div></div></div>' +

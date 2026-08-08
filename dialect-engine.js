@@ -112,7 +112,7 @@
         '<div class="rank-head"><div><h2 class="rank-title">📚 우리 반 배운 점</h2><div class="rank-sub">' + esc(REGION) + ' 방언에서 새롭게 알게 된 점</div></div>' +
         '<button class="btn ghost rank-refresh" id="learnRefresh">🔄</button></div>' +
         '<div id="learnWriteBox"><button class="btn alt" id="learnWriteBtn">✏️ 배운 점 남기기</button>' +
-        '<div id="learnWriteForm" class="hidden"><input id="learnName" type="text" placeholder="이름(실명)" maxlength="20">' +
+        '<div id="learnWriteForm" class="hidden">' +
         '<textarea id="learnText" placeholder="새롭게 알게 된 점을 적어 주세요." maxlength="300"></textarea>' +
         '<div class="rank-status" id="learnWriteStatus"></div><button class="btn alt" id="learnSubmit">올리기</button>' +
         '<button class="btn ghost" id="learnCancel" style="margin-top:10px">취소</button></div></div>' +
@@ -358,7 +358,7 @@
   /* ---------- 배운 점 게시판 ---------- */
   function openLearn(from) { learnReturnTo = from || "start"; $("learnWriteForm").classList.add("hidden"); $("learnWriteBtn").classList.remove("hidden"); showOnly("learnScreen"); window.scrollTo({ top: 0 }); loadReflections(); }
   function closeLearn() { showOnly(learnReturnTo === "result" ? "resultScreen" : "startScreen"); window.scrollTo({ top: 0 }); }
-  function toggleLearnWrite() { var f = $("learnWriteForm"), b = $("learnWriteBtn"); if (f.classList.contains("hidden")) { $("learnName").value = userName || ""; $("learnText").value = ""; $("learnWriteStatus").textContent = ""; f.classList.remove("hidden"); b.classList.add("hidden"); } else { f.classList.add("hidden"); b.classList.remove("hidden"); } }
+  function toggleLearnWrite() { var f = $("learnWriteForm"), b = $("learnWriteBtn"); if (f.classList.contains("hidden")) { $("learnText").value = ""; $("learnWriteStatus").textContent = ""; f.classList.remove("hidden"); b.classList.add("hidden"); } else { f.classList.add("hidden"); b.classList.remove("hidden"); } }
   function postReflection(name, text) { return fetch(SUPABASE_URL + "/rest/v1/reflections_kr", { method: "POST", headers: HDRJ, body: JSON.stringify({ room: currentRoom.code, region: REGION, name: name, text: text }) }).then(function (r) { return r.ok; }).catch(function () { return false; }); }
   function submitMemo() {
     var ta = $("memoInput"); if (!ta || !currentRoom) return; var text = ta.value.trim(); var st = $("memoStatus");
@@ -371,12 +371,13 @@
     });
   }
   function submitLearn() {
-    var name = $("learnName").value.trim(), text = $("learnText").value.trim(), st = $("learnWriteStatus");
-    if (!name) { st.textContent = "이름을 입력해 주세요."; return; }
+    var name = userName; if (!name) { try { name = localStorage.getItem("krName") || ""; } catch (e) {} }
+    var text = $("learnText").value.trim(), st = $("learnWriteStatus");
+    if (!name) { st.textContent = "이름 정보가 없어요. 먼저 이름을 입력해 주세요."; return; }
     if (!text) { st.textContent = "내용을 입력해 주세요."; return; }
     if (!currentRoom) { st.textContent = "방에 입장한 상태에서만 올릴 수 있어요."; return; }
     st.textContent = "⏳ 올리는 중…";
-    postReflection(name, text).then(function (ok) { if (!ok) { st.textContent = "⚠️ 올리기 실패 — 다시 시도해 주세요."; return; } if (!userName) userName = name; toggleLearnWrite(); loadReflections(); });
+    postReflection(name, text).then(function (ok) { if (!ok) { st.textContent = "⚠️ 올리기 실패 — 다시 시도해 주세요."; return; } toggleLearnWrite(); loadReflections(); });
   }
   function loadReflections() {
     var list = $("learnList");

@@ -637,7 +637,6 @@
     <div id="learnWriteBox">
       <button class="btn ocean" id="learnWriteBtn" onclick="toggleLearnWrite()">✏️ 배운 점 남기기</button>
       <div id="learnWriteForm" class="hidden">
-        <input id="learnName" type="text" placeholder="이름(실명)" maxlength="20" autocomplete="off">
         <textarea id="learnText" placeholder="새롭게 알게 된 점을 적어 주세요." maxlength="300"></textarea>
         <div class="rank-status" id="learnWriteStatus"></div>
         <button class="btn ocean" onclick="submitLearnFromBoard()" style="margin-top:0">올리기</button>
@@ -1570,7 +1569,6 @@ async function doDeleteReflection() {
 function toggleLearnWrite() {
   const f = $("learnWriteForm"), btn = $("learnWriteBtn");
   if (f.classList.contains("hidden")) {
-    $("learnName").value = userName || "";
     $("learnText").value = "";
     setLearnWriteStatus("", "");
     f.classList.remove("hidden");
@@ -1595,9 +1593,9 @@ function postReflection(name, text) {
   }).then(r => r.ok).catch(() => false);
 }
 async function submitLearnFromBoard() {
-  const name = $("learnName").value.trim();
+  let name = userName; if (!name) { const ni = $("nameInput"); if (ni) name = ni.value.trim(); }
   const text = $("learnText").value.trim();
-  if (!name) { setLearnWriteStatus("이름을 입력해 주세요.", "warn"); return; }
+  if (!name) { setLearnWriteStatus("이름 정보가 없어요. 먼저 이름을 입력해 주세요.", "warn"); return; }
   if (!text) { setLearnWriteStatus("내용을 입력해 주세요.", "warn"); return; }
   if (!RANK_ON() || !currentRoom) { setLearnWriteStatus("방에 입장한 상태에서만 올릴 수 있어요.", "warn"); return; }
   setLearnWriteStatus("⏳ 올리는 중…", "");

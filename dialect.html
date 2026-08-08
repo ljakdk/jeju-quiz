@@ -115,9 +115,6 @@
   .dev-credit a:hover{color:var(--accent);border-bottom-color:var(--accent);}
   .title-shine{position:relative;display:block;width:min(820px,94vw);max-width:94vw;margin:2px auto 0;left:50%;transform:translateX(-50%);overflow:hidden;}
   .title-shine img{display:block;width:100%;height:auto;}
-  .title-shine::after{content:"";position:absolute;top:-30%;left:-80%;width:55%;height:160%;background:linear-gradient(100deg,transparent 40%,rgba(255,255,255,.35) 47%,rgba(255,255,255,.95) 50%,rgba(255,255,255,.35) 53%,transparent 60%);transform:skewX(-16deg);pointer-events:none;animation:titleShine 3.4s ease-in-out infinite;}
-  @keyframes titleShine{0%{left:-80%;}60%,100%{left:135%;}}
-  @media (prefers-reduced-motion:reduce){.title-shine::after{animation:none;display:none;}}
   .bbtns{display:flex;gap:6px;align-items:center;}
   .bdel{border:1px solid var(--line);background:var(--paper);border-radius:99px;padding:3px 9px;font-size:12.5px;color:var(--gray);cursor:pointer;font-family:inherit;opacity:.7;transition:.15s;}
   .bdel:hover{opacity:1;border-color:#e03131;color:#e03131;}
